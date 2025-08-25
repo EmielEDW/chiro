@@ -23,7 +23,6 @@ interface Item {
   category?: string;
   image_url?: string;
   stock_quantity?: number;
-  active: boolean;
   created_at: string;
 }
 
@@ -668,13 +667,12 @@ const ProductManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Product</TableHead>
+                <TableHead>Naam</TableHead>
                 <TableHead>Categorie</TableHead>
-                <TableHead>Verkoopprijs</TableHead>
-                <TableHead>Inkoopprijs</TableHead>
+                <TableHead>Prijs</TableHead>
+                <TableHead>Kostprijs</TableHead>
                 <TableHead>Winst</TableHead>
                 <TableHead>Voorraad</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Acties</TableHead>
               </TableRow>
             </TableHeader>
@@ -709,11 +707,6 @@ const ProductManagement = () => {
                       {formatCurrency(profit)}
                     </TableCell>
                     <TableCell>{item.stock_quantity || 0}</TableCell>
-                    <TableCell>
-                      <Badge variant={item.active ? 'default' : 'secondary'}>
-                        {item.active ? 'Actief' : 'Inactief'}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button

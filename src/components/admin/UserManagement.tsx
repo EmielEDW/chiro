@@ -27,7 +27,6 @@ interface Profile {
   email: string;
   role: string;
   active: boolean;
-  allow_credit: boolean;
   created_at: string;
 }
 

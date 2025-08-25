@@ -28,7 +28,6 @@ interface Item {
   image_url?: string;
   stock_quantity?: number;
   stock_alert_threshold?: number;
-  active: boolean;
 }
 
 const StockManagement = () => {
