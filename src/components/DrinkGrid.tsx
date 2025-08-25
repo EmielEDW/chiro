@@ -192,7 +192,8 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
           return (
             <Card 
               key={item.id} 
-              className={`transition-all relative ${!affordable ? 'opacity-50' : 'hover:shadow-md'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
+              className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => affordable && logDrink(item)}
             >
               <CardContent className="p-4">
                 <div className="flex flex-col space-y-3">
@@ -215,7 +216,10 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                       variant="ghost"
                       size="sm"
                       className="absolute top-1 right-1 h-6 w-6 p-0"
-                      onClick={() => toggleFavorite.mutate({ itemId: item.id, isFavorite })}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                      }}
                     >
                       {isFavorite ? (
                         <Heart className="h-3 w-3 fill-primary text-primary" />
@@ -251,13 +255,16 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                   </div>
                   
                   <Button
-                    onClick={() => logDrink(item)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      logDrink(item);
+                    }}
                     disabled={!affordable}
                     size="sm"
                     className="w-full"
                   >
                     <Plus className="mr-1 h-3 w-3" />
-                    +1
+                    Registreer
                   </Button>
                 </div>
               </CardContent>
