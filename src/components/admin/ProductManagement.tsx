@@ -412,28 +412,50 @@ const ProductManagement = () => {
 
   const formatCurrency = (cents: number) => `€${(cents / 100).toFixed(2)}`;
 
+  const getCategoryColor = (category?: string) => {
+    switch (category) {
+      case 'chips':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'frisdranken':
+        return 'bg-blue-100 text-blue-800';
+      case 'bieren':
+        return 'bg-amber-100 text-amber-800';
+      case 'sterke_dranken':
+        return 'bg-red-100 text-red-800';
+      case 'mixed_drinks':
+        return 'bg-purple-100 text-purple-800';
+      case 'andere':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getCategoryName = (category?: string) => {
+    switch (category) {
+      case 'chips':
+        return 'Chips';
+      case 'frisdranken':
+        return 'Frisdranken';
+      case 'bieren':
+        return 'Bieren';
+      case 'sterke_dranken':
+        return 'Sterke dranken';
+      case 'mixed_drinks':
+        return 'Mixed Drinks';
+      case 'andere':
+        return 'Andere';
+      default:
+        return 'Overig';
+    }
+  };
+
   const getCategoryBadge = (category: string | null) => {
     if (!category) return <Badge variant="outline">Geen categorie</Badge>;
     
-    const variants: Record<string, any> = {
-      chips: 'default',
-      frisdranken: 'secondary',
-      bieren: 'default',
-      sterke_dranken: 'default',
-      mixed_drinks: 'secondary',
-      andere: 'outline',
-    };
-    
-    const names: Record<string, string> = {
-      chips: 'Chips',
-      frisdranken: 'Frisdranken',
-      bieren: 'Bieren',
-      sterke_dranken: 'Sterke dranken',
-      mixed_drinks: 'Mixed Drinks',
-      andere: 'Andere',
-    };
-    
-    return <Badge variant={variants[category] || 'outline'}>{names[category] || category}</Badge>;
+    return <Badge variant="secondary" className={getCategoryColor(category)}>
+      {getCategoryName(category)}
+    </Badge>;
   };
 
   if (isLoading) {
