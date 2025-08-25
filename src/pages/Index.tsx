@@ -9,7 +9,7 @@ import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, QrCode, Settings, Eye } from 'lucide-react';
+import { LogOut, History, Settings, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
@@ -133,7 +133,7 @@ const Index = () => {
         </TopUpDialog>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           <Button 
             variant="outline" 
             className="h-16 flex-col space-y-1"
@@ -141,14 +141,6 @@ const Index = () => {
           >
             <History className="h-5 w-5" />
             <span className="text-sm">Geschiedenis</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col space-y-1"
-            onClick={() => navigate('/scan')}
-          >
-            <QrCode className="h-5 w-5" />
-            <span className="text-sm">QR Scan</span>
           </Button>
         </div>
 

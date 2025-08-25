@@ -22,6 +22,7 @@ import StockManagement from '@/components/admin/StockManagement';
 import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
+import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -145,6 +146,9 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Website QR Code */}
+        <WebsiteQRGenerator />
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">

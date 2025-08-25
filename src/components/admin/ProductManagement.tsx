@@ -11,8 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2, Upload, QrCode } from 'lucide-react';
-import { QRCodeGenerator } from './QRCodeGenerator';
+import { Plus, Edit, Trash2, Upload } from 'lucide-react';
 
 interface Item {
   id: string;
@@ -33,7 +32,7 @@ const ProductManagement = () => {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
-  const [qrItem, setQrItem] = useState<Item | null>(null);
+  
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: '',
@@ -428,14 +427,6 @@ const ProductManagement = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setQrItem(item)}
-                          title="QR Code genereren"
-                        >
-                          <QrCode className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
                           onClick={() => openEditDialog(item)}
                         >
                           <Edit className="h-4 w-4" />
@@ -457,14 +448,6 @@ const ProductManagement = () => {
           </Table>
         </div>
       </CardContent>
-      
-      {qrItem && (
-        <QRCodeGenerator
-          item={qrItem}
-          open={!!qrItem}
-          onOpenChange={(open) => !open && setQrItem(null)}
-        />
-      )}
     </Card>
   );
 };
