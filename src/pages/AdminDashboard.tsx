@@ -19,6 +19,8 @@ import { Navigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
 import UserManagement from '@/components/admin/UserManagement';
 import StockManagement from '@/components/admin/StockManagement';
+import ProductManagement from '@/components/admin/ProductManagement';
+import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import FinancialDashboard from '@/components/admin/FinancialDashboard';
 
 const AdminDashboard = () => {
@@ -166,9 +168,16 @@ const AdminDashboard = () => {
           <TabsContent value="users">
             <UserManagement />
           </TabsContent>
-
+          
           <TabsContent value="stock">
-            <StockManagement />
+            <div className="space-y-6">
+              <ProductManagement />
+              <StockManagement />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="analytics">
+            <SalesDetailsDashboard />
           </TabsContent>
 
           <TabsContent value="settings">

@@ -4,6 +4,7 @@ import { signOut } from '@/lib/auth';
 import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
 import ConsumptionHistory from '@/components/ConsumptionHistory';
+import Leaderboard from '@/components/Leaderboard';
 import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';

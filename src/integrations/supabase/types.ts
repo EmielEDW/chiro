@@ -194,6 +194,7 @@ export type Database = {
           is_default: boolean
           name: string
           price_cents: number
+          purchase_price_cents: number | null
           stock_alert_threshold: number | null
           stock_quantity: number | null
           updated_at: string
@@ -209,6 +210,7 @@ export type Database = {
           is_default?: boolean
           name: string
           price_cents: number
+          purchase_price_cents?: number | null
           stock_alert_threshold?: number | null
           stock_quantity?: number | null
           updated_at?: string
@@ -224,6 +226,7 @@ export type Database = {
           is_default?: boolean
           name?: string
           price_cents?: number
+          purchase_price_cents?: number | null
           stock_alert_threshold?: number | null
           stock_quantity?: number | null
           updated_at?: string

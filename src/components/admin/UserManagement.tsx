@@ -165,11 +165,21 @@ const UserManagement = () => {
                         </DialogContent>
                       </Dialog>
                       
-                      <Button variant="ghost" size="sm" disabled>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {/* TODO: Balance adjustment */}}
+                        title="Saldo aanpassen"
+                      >
                         <CreditCard className="h-4 w-4" />
                       </Button>
                       
-                      <Button variant="ghost" size="sm" disabled>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => {/* TODO: Delete user */}}
+                        title="Gebruiker verwijderen"
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
                     </div>

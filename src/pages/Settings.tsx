@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { useQueryClient } from '@tanstack/react-query';
+import ProfileImageUpload from '@/components/ProfileImageUpload';
 
 const Settings = () => {
   const { user } = useAuth();
