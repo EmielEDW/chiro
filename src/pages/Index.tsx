@@ -33,11 +33,16 @@ const Index = () => {
     refreshBalance();
   };
 
-  if (isLoading) {
+  if (isLoading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
+        <div className="text-center space-y-4">
+          <img 
+            src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
+            alt="Chiro Logo" 
+            className="h-16 w-16 mx-auto"
+          />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground">Laden...</p>
         </div>
       </div>
