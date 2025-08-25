@@ -228,13 +228,18 @@ const ProductManagement = () => {
     if (!category) return <Badge variant="outline">Geen categorie</Badge>;
     
     const variants: Record<string, any> = {
-      drinks: 'default',
-      food: 'secondary',
-      alcohol: 'destructive',
-      other: 'outline',
+      drank: 'default',
+      eten: 'secondary',
+      andere: 'outline',
     };
     
-    return <Badge variant={variants[category] || 'outline'}>{category}</Badge>;
+    const names: Record<string, string> = {
+      drank: 'Drank',
+      eten: 'Eten',
+      andere: 'Andere',
+    };
+    
+    return <Badge variant={variants[category] || 'outline'}>{names[category] || category}</Badge>;
   };
 
   if (isLoading) {
@@ -290,10 +295,9 @@ const ProductManagement = () => {
                         <SelectValue placeholder="Selecteer categorie" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="drinks">Dranken</SelectItem>
-                        <SelectItem value="food">Voedsel</SelectItem>
-                        <SelectItem value="alcohol">Alcohol</SelectItem>
-                        <SelectItem value="other">Overige</SelectItem>
+                        <SelectItem value="drank">Drank</SelectItem>
+                        <SelectItem value="eten">Eten</SelectItem>
+                        <SelectItem value="andere">Andere</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

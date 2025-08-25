@@ -92,12 +92,12 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
 
   const getCategoryColor = (category?: string) => {
     switch (category) {
-      case 'frisdrank_pils_chips':
+      case 'drank':
         return 'bg-blue-100 text-blue-800';
-      case 'energy_kriek':
-        return 'bg-orange-100 text-orange-800';
-      case 'mixed_drink':
-        return 'bg-purple-100 text-purple-800';
+      case 'eten':
+        return 'bg-green-100 text-green-800';
+      case 'andere':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -105,14 +105,14 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
 
   const getCategoryName = (category?: string) => {
     switch (category) {
-      case 'frisdrank_pils_chips':
-        return 'Frisdrank/Pils/Chips';
-      case 'energy_kriek':
-        return 'Energy/Kriek';
-      case 'mixed_drink':
-        return 'Mixed Drink';
+      case 'drank':
+        return 'Drank';
+      case 'eten':
+        return 'Eten';
+      case 'andere':
+        return 'Andere';
       default:
-        return 'Overig';
+        return 'Onbekend';
     }
   };
 

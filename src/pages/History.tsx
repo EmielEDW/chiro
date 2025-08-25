@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,10 +12,12 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Search, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ArrowLeft, Search, CalendarIcon, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { nl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface HistoryItem {
   id: string;
@@ -32,6 +34,7 @@ const ITEMS_PER_PAGE = 20;
 export default function History() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
@@ -64,7 +67,7 @@ export default function History() {
       
       if (consumptionsError) throw consumptionsError;
 
-      // Fetch top-ups
+      // Fetch top-ups (only paid ones for history)
       const { data: topUpsData, error: topUpsError } = await supabase
         .from('top_ups')
         .select(`
@@ -75,6 +78,7 @@ export default function History() {
           status
         `)
         .eq('user_id', user.id)
+        .eq('status', 'paid') // Only show paid top-ups
         .gte('created_at', startDate)
         .lte('created_at', endDate)
         .order('created_at', { ascending: false });
@@ -108,6 +112,80 @@ export default function History() {
       return combined as HistoryItem[];
     },
     enabled: !!user?.id,
+  });
+
+  // Mutation to reverse a transaction
+  const reverseTransaction = useMutation({
+    mutationFn: async (item: HistoryItem) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      if (item.type === 'consumption') {
+        // Create a reversal adjustment (positive amount to refund)
+        const { error: adjustmentError } = await supabase
+          .from('adjustments')
+          .insert({
+            user_id: user.id,
+            delta_cents: Math.abs(item.price_cents), // Make it positive (refund)
+            reason: `Foutje teruggedraaid: ${item.item_name}`,
+            created_by: user.id
+          });
+
+        if (adjustmentError) throw adjustmentError;
+
+        // If the item has stock tracking, add it back
+        if (item.item_name && item.item_name !== 'Onbekend product') {
+          // Find the item to update stock
+          const { data: itemData, error: itemFindError } = await supabase
+            .from('items')
+            .select('id, stock_quantity')
+            .eq('name', item.item_name)
+            .single();
+
+          if (!itemFindError && itemData && itemData.stock_quantity !== null) {
+            // Add stock back
+            const { error: stockError } = await supabase
+              .from('items')
+              .update({ 
+                stock_quantity: itemData.stock_quantity + 1 
+              })
+              .eq('id', itemData.id);
+
+            if (stockError) throw stockError;
+
+            // Log stock transaction
+            await supabase
+              .from('stock_transactions')
+              .insert({
+                item_id: itemData.id,
+                quantity_change: 1,
+                transaction_type: 'reversal',
+                notes: `Foutje teruggedraaid: stock teruggeteld`,
+                created_by: user.id
+              });
+          }
+        }
+      } else if (item.type === 'topup') {
+        // Create a negative adjustment to reverse the top-up
+        const { error: adjustmentError } = await supabase
+          .from('adjustments')
+          .insert({
+            user_id: user.id,
+            delta_cents: -Math.abs(item.price_cents), // Make it negative
+            reason: `Foutje teruggedraaid: opwaardering`,
+            created_by: user.id
+          });
+
+        if (adjustmentError) throw adjustmentError;
+      }
+    },
+    onSuccess: () => {
+      toast.success('Transactie succesvol teruggedraaid!');
+      queryClient.invalidateQueries({ queryKey: ['user-history'] });
+      queryClient.invalidateQueries({ queryKey: ['balance'] });
+    },
+    onError: (error) => {
+      toast.error(`Fout bij terugdraaien: ${error.message}`);
+    },
   });
 
   const filteredItems = historyItems.filter((item) => {
@@ -312,6 +390,7 @@ export default function History() {
                   <TableHead>Details</TableHead>
                   <TableHead>Bedrag</TableHead>
                   <TableHead>Bron</TableHead>
+                  <TableHead>Acties</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -333,6 +412,45 @@ export default function History() {
                       {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
                     </TableCell>
                     <TableCell>{getSourceBadge(item.source, item.type)}</TableCell>
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-orange-600 hover:text-orange-700"
+                          >
+                            <Undo2 className="h-4 w-4 mr-1" />
+                            Foutje
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Weet je zeker dat je deze transactie wilt terugdraaien?
+                              <br />
+                              <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                              <br />
+                              <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
+                              {item.type === 'consumption' && (
+                                <><br /><strong>Note:</strong> De voorraad wordt ook teruggeteld.</>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => reverseTransaction.mutate(item)}
+                              disabled={reverseTransaction.isPending}
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

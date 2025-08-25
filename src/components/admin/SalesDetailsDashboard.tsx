@@ -71,7 +71,7 @@ const SalesDetailsDashboard = () => {
       
       if (consumptionsError) throw consumptionsError;
 
-      // Fetch top-ups
+      // Fetch top-ups (only paid ones for admin view)
       const { data: topUpsData, error: topUpsError } = await supabase
         .from('top_ups')
         .select(`
@@ -85,6 +85,7 @@ const SalesDetailsDashboard = () => {
             name
           )
         `)
+        .eq('status', 'paid') // Only show paid top-ups
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
