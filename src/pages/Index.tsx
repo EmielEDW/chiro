@@ -8,7 +8,7 @@ import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, QrCode, Settings } from 'lucide-react';
+import { LogOut, History, QrCode, Settings, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
@@ -80,6 +80,14 @@ const Index = () => {
                   <Settings className="h-4 w-4" />
                 </Button>
               )}
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/settings')}
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
               
               <Button
                 variant="ghost"

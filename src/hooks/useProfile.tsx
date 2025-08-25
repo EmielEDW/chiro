@@ -11,6 +11,7 @@ export interface Profile {
   avatar_url?: string;
   active: boolean;
   allow_credit: boolean;
+  created_at: string;
 }
 
 export const useProfile = () => {

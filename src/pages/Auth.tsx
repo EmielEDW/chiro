@@ -58,6 +58,33 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Check if email already exists
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (checkError) {
+      toast({
+        title: "Fout bij verificatie",
+        description: "Er ging iets mis bij het controleren van je email.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
+    if (existingUsers) {
+      toast({
+        title: "Email al in gebruik",
+        description: "Er bestaat al een account met dit email adres. Probeer in te loggen of gebruik een ander email adres.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     // Validate admin password if admin signup is selected
     if (isAdminSignup && adminPassword !== 'Drankenman123!') {
       toast({
