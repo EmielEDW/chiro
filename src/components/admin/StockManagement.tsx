@@ -105,12 +105,18 @@ const StockManagement = () => {
 
   const getCategoryColor = (category?: string) => {
     switch (category) {
-      case 'frisdrank_pils_chips':
+      case 'chips':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'frisdranken':
         return 'bg-blue-100 text-blue-800';
-      case 'energy_kriek':
-        return 'bg-orange-100 text-orange-800';
-      case 'mixed_drink':
+      case 'bieren':
+        return 'bg-amber-100 text-amber-800';
+      case 'sterke_dranken':
+        return 'bg-red-100 text-red-800';
+      case 'mixed_drinks':
         return 'bg-purple-100 text-purple-800';
+      case 'andere':
+        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -118,12 +124,18 @@ const StockManagement = () => {
 
   const getCategoryName = (category?: string) => {
     switch (category) {
-      case 'frisdrank_pils_chips':
-        return 'Frisdrank/Pils/Chips';
-      case 'energy_kriek':
-        return 'Energy/Kriek';
-      case 'mixed_drink':
-        return 'Mixed Drink';
+      case 'chips':
+        return 'Chips';
+      case 'frisdranken':
+        return 'Frisdranken';
+      case 'bieren':
+        return 'Bieren';
+      case 'sterke_dranken':
+        return 'Sterke dranken';
+      case 'mixed_drinks':
+        return 'Mixed Drinks';
+      case 'andere':
+        return 'Andere';
       default:
         return 'Overig';
     }
