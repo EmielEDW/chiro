@@ -67,10 +67,15 @@ export const useProfile = () => {
     },
   });
 
+  const refreshBalance = () => {
+    queryClient.invalidateQueries({ queryKey: ['balance', user?.id] });
+  };
+
   return {
     profile,
     balance: balance || 0,
     isLoading,
     updateProfile,
+    refreshBalance,
   };
 };

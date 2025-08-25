@@ -3,15 +3,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
+import ConsumptionHistory from '@/components/ConsumptionHistory';
+import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, QrCode } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
-  const { profile, balance, isLoading } = useProfile();
+  const { profile, balance, isLoading, refreshBalance } = useProfile();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -25,16 +26,8 @@ const Index = () => {
     }
   };
 
-  const handleTopUp = () => {
-    toast({
-      title: "Opladen",
-      description: "Betalingsfunctionaliteit wordt binnenkort toegevoegd!",
-    });
-  };
-
   const handleRefreshBalance = () => {
-    // This will be called when a drink is logged to refresh the balance
-    window.location.reload();
+    refreshBalance();
   };
 
   if (isLoading) {
@@ -96,11 +89,15 @@ const Index = () => {
         </div>
 
         {/* Balance Card */}
-        <BalanceCard 
-          balance={balance} 
-          onTopUp={handleTopUp}
-          allowCredit={profile?.allow_credit || false}
-        />
+        <TopUpDialog>
+          <div className="w-full">
+            <BalanceCard 
+              balance={balance} 
+              onTopUp={() => {}}
+              allowCredit={profile?.allow_credit || false}
+            />
+          </div>
+        </TopUpDialog>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
@@ -122,16 +119,7 @@ const Index = () => {
         />
 
         {/* Recent Activity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Recente Activiteit</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Geen recente activiteit
-            </p>
-          </CardContent>
-        </Card>
+        <ConsumptionHistory />
       </main>
     </div>
   );
