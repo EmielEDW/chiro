@@ -263,8 +263,118 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     });
   });
 
+  // Get favorite items for the top section
+  const favoriteItems = items.filter(item => favorites.includes(item.id));
+
   return (
     <div className="space-y-6">
+      {/* Favorites section at the top */}
+      {favoriteItems.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary fill-primary" />
+            <h3 className="text-lg font-semibold text-primary">Favorieten</h3>
+            <Badge 
+              variant="default" 
+              className="text-xs bg-primary text-primary-foreground"
+            >
+              {favoriteItems.length} items
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {favoriteItems.map((item) => {
+              const affordable = canAfford(item.price_cents);
+              const isFavorite = favorites.includes(item.id);
+              const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
+              const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
+              const isOutOfStock = stockValue === 0;
+              
+              return (
+                <Card 
+                  key={`favorite-${item.id}`} 
+                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-primary/10 to-white hover:from-primary/20 hover:to-white border-primary/30 ${!affordable || isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ring-2 ring-primary/50`}
+                  onClick={() => affordable && !isOutOfStock && logDrink(item)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-3">
+                      {/* Image placeholder */}
+                      <div className="relative">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-32 object-contain rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        
+                        {/* Favorite button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
+                        >
+                          <Heart className="h-3 w-3 fill-primary text-primary" />
+                        </Button>
+                      </div>
+                      
+                      <div className="text-center space-y-2">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                        
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {formatCurrency(item.price_cents)}
+                          </Badge>
+                          
+                          {isOutOfStock ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Niet beschikbaar
+                            </Badge>
+                          ) : isLowStock ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Weinig voorraad: {stockValue}
+                            </Badge>
+                          ) : item.category === 'mixed_drinks' ? (
+                            <Badge variant="default" className="text-xs">
+                              Beschikbaar
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                      
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          logDrink(item);
+                        }}
+                        disabled={!affordable || isOutOfStock}
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Registreer
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Regular categories */}
       {sortedCategories.map((category) => (
         <div key={category} className="space-y-4">
           <div className="flex items-center gap-2">
