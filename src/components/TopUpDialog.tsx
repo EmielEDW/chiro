@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +21,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const { toast } = useToast();
   const { refreshBalance, profile } = useProfile();
 
-  const quickAmounts = [5, 10, 20, 50];
+  const quickAmounts = [25, 50];
 
   const handleTopUp = async () => {
     if (!amount || !method) {
@@ -35,10 +34,10 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
     }
 
     const numAmount = parseFloat(amount);
-    if (numAmount <= 0 || numAmount > 100) {
+    if (numAmount !== 25 && numAmount !== 50) {
       toast({
         title: "Ongeldig bedrag",
-        description: "Bedrag moet tussen €0.01 en €100 zijn.",
+        description: "Selecteer €25 of €50.",
         variant: "destructive",
       });
       return;
@@ -110,7 +109,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         <div className="space-y-6">
           {/* Quick Amount Selection */}
           <div className="space-y-3">
-            <Label>Snel bedrag selecteren</Label>
+            <Label>Bedrag selecteren</Label>
             <div className="grid grid-cols-2 gap-2">
               {quickAmounts.map((quickAmount) => (
                 <Button
@@ -122,25 +121,6 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
                   €{quickAmount}
                 </Button>
               ))}
-            </div>
-          </div>
-
-          {/* Custom Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Of voer een eigen bedrag in</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">€</span>
-              <Input
-                id="amount"
-                type="number"
-                min="1"
-                max="100"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="pl-8"
-              />
             </div>
           </div>
 
