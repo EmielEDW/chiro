@@ -71,9 +71,16 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Beheer gebruikers, voorraad en bekijk statistieken</p>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
+              alt="Chiro Logo" 
+              className="h-8 w-8"
+            />
+            <div>
+              <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
+              <p className="text-muted-foreground">Beheer gebruikers, voorraad en bekijk statistieken</p>
+            </div>
           </div>
           <Button onClick={() => window.location.href = '/'} variant="outline">
             <Eye className="mr-2 h-4 w-4" />

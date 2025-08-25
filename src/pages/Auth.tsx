@@ -93,6 +93,13 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          <div className="flex items-center justify-center mb-4">
+            <img 
+              src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
+              alt="Chiro Logo" 
+              className="h-16 w-16"
+            />
+          </div>
           <CardTitle className="text-2xl font-bold text-primary">Chiro Drinks</CardTitle>
           <CardDescription>
             Beheer je dranken saldo digitaal

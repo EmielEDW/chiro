@@ -50,6 +50,11 @@ const Index = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
+              <img 
+                src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
+                alt="Chiro Logo" 
+                className="h-8 w-8"
+              />
               <h1 className="text-xl font-bold text-primary">Chiro Drinks</h1>
             </div>
             
