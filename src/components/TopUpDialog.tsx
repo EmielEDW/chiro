@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Banknote, Plus, Loader2 } from 'lucide-react';
+import { CreditCard, Building2, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -44,10 +44,11 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
       return;
     }
 
-    if (method === 'cash') {
+    if (method === 'banktransfer') {
       toast({
-        title: "Cash betaling",
-        description: "Ga naar de bar om je saldo op te laden met cash.",
+        title: "Bankoverschrijving",
+        description: "Maak een overschrijving naar het opgegeven rekeningnummer. Je saldo wordt handmatig bijgewerkt door de admin.",
+        duration: 8000,
       });
       setIsOpen(false);
       setAmount('');
@@ -164,16 +165,16 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
               </Card>
               
               <Card 
-                className={`cursor-pointer transition-colors ${method === 'cash' ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setMethod('cash')}
+                className={`cursor-pointer transition-colors ${method === 'banktransfer' ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setMethod('banktransfer')}
               >
                 <CardContent className="p-3 flex items-center space-x-3">
-                  <Banknote className="h-5 w-5 text-primary" />
+                  <Building2 className="h-5 w-5 text-primary" />
                   <div className="flex-1">
-                    <p className="font-medium text-sm">Cash</p>
-                    <p className="text-xs text-muted-foreground">Betaal bij de bar</p>
+                    <p className="font-medium text-sm">Bankoverschrijving</p>
+                    <p className="text-xs text-muted-foreground">BE52 0637 7145 7809</p>
                   </div>
-                  {method === 'cash' && (
+                  {method === 'banktransfer' && (
                     <Badge variant="default" className="text-xs">Geselecteerd</Badge>
                   )}
                 </CardContent>
@@ -189,6 +190,12 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
                   <span className="font-medium">Totaal op te laden:</span>
                   <span className="text-lg font-bold text-primary">€{amount}</span>
                 </div>
+                {method === 'banktransfer' && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    <p><strong>Rekeningnummer:</strong> BE52 0637 7145 7809</p>
+                    <p><strong>Mededeling:</strong> Opladen saldo - {amount} euro</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
