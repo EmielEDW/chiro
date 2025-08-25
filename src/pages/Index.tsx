@@ -56,7 +56,7 @@ const Index = () => {
                 alt="Chiro Logo" 
                 className="h-8 w-8"
               />
-              <h1 className="text-xl font-bold text-primary">Chiro Drinks</h1>
+              <h1 className="text-xl font-bold text-primary">Chiro Bar</h1>
             </div>
             
             <div className="flex items-center space-x-3">
