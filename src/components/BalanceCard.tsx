@@ -16,14 +16,12 @@ const BalanceCard = ({ balance, onTopUp, allowCredit = false }: BalanceCardProps
 
   const getBalanceColor = () => {
     if (balance > 500) return 'text-primary';
-    if (balance > 0) return 'text-yellow-600';
-    return 'text-red-600';
+    return 'text-yellow-600';
   };
 
   const getBalanceBadge = () => {
     if (balance > 500) return { variant: 'default' as const, text: 'Goed saldo' };
-    if (balance > 0) return { variant: 'secondary' as const, text: 'Laag saldo' };
-    return { variant: 'destructive' as const, text: allowCredit ? 'Krediet toegestaan' : 'Opladen vereist' };
+    return { variant: 'secondary' as const, text: 'Laag saldo' };
   };
 
   const badge = getBalanceBadge();
