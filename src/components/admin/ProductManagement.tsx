@@ -227,14 +227,18 @@ const ProductManagement = () => {
     if (!category) return <Badge variant="outline">Geen categorie</Badge>;
     
     const variants: Record<string, any> = {
-      drank: 'default',
-      eten: 'secondary',
+      chips: 'default',
+      frisdranken: 'secondary',
+      bieren: 'default',
+      mixed_drinks: 'secondary',
       andere: 'outline',
     };
     
     const names: Record<string, string> = {
-      drank: 'Drank',
-      eten: 'Eten',
+      chips: 'Chips',
+      frisdranken: 'Frisdranken',
+      bieren: 'Bieren',
+      mixed_drinks: 'Mixed Drinks',
       andere: 'Andere',
     };
     
@@ -290,12 +294,14 @@ const ProductManagement = () => {
                       value={formData.category}
                       onValueChange={(value) => setFormData({ ...formData, category: value })}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background border z-50">
                         <SelectValue placeholder="Selecteer categorie" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="drank">Drank</SelectItem>
-                        <SelectItem value="eten">Eten</SelectItem>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        <SelectItem value="chips">Chips</SelectItem>
+                        <SelectItem value="frisdranken">Frisdranken</SelectItem>
+                        <SelectItem value="bieren">Bieren</SelectItem>
+                        <SelectItem value="mixed_drinks">Mixed Drinks</SelectItem>
                         <SelectItem value="andere">Andere</SelectItem>
                       </SelectContent>
                     </Select>
