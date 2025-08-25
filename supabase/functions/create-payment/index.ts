@@ -61,6 +61,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
+      payment_method_types: ["bancontact", "card"],
       success_url: `${req.headers.get("origin")}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/payment-cancelled`,
       metadata: {
@@ -80,8 +81,8 @@ serve(async (req) => {
       user_id: user.id,
       amount_cents: amountInCents,
       status: "pending",
-      stripe_session_id: session.id,
-      payment_method: "stripe",
+      provider_ref: session.id,
+      provider: "stripe",
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

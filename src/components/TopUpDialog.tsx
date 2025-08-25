@@ -65,8 +65,8 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
 
         if (error) throw error;
 
-        // Open Stripe checkout in a new tab
-        window.open(data.url, '_blank');
+        // Redirect to Stripe checkout in same tab
+        window.location.href = data.url;
         
         setIsOpen(false);
         setAmount('');

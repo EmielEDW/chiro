@@ -38,7 +38,7 @@ serve(async (req) => {
           status: "paid",
           updated_at: new Date().toISOString()
         })
-        .eq("stripe_session_id", session_id);
+        .eq("provider_ref", session_id);
 
       return new Response(JSON.stringify({ 
         success: true, 
