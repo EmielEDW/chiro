@@ -31,6 +31,8 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [upgradeToAdmin, setUpgradeToAdmin] = useState(false);
   const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,7 +109,18 @@ const Settings = () => {
   };
 
   const handleAdminUpgrade = async () => {
-    if (!upgradeToAdmin) return;
+    if (!upgradeToAdmin || !adminPassword) return;
+    
+    // Check the special admin password
+    if (adminPassword !== 'Drankenman123!') {
+      toast({
+        title: "Onjuist wachtwoord",
+        description: "Het admin wachtwoord is niet correct.",
+        variant: "destructive",
+      });
+      setAdminPassword('');
+      return;
+    }
     
     setUpgradeLoading(true);
 
@@ -127,6 +140,7 @@ const Settings = () => {
       // Refresh profile data
       queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
       setUpgradeToAdmin(false);
+      setAdminPassword('');
     } catch (error: any) {
       toast({
         title: "Fout bij upgraden",
@@ -326,16 +340,44 @@ const Settings = () => {
                   </div>
                   
                   {upgradeToAdmin && (
-                    <Button 
-                      onClick={handleAdminUpgrade}
-                      disabled={upgradeLoading}
-                      variant="outline"
-                      className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
-                    >
-                      {upgradeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      <Shield className="mr-2 h-4 w-4" />
-                      Account upgraden naar admin
-                    </Button>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="admin-password">Admin wachtwoord</Label>
+                        <div className="relative">
+                          <Input
+                            id="admin-password"
+                            type={showAdminPassword ? "text" : "password"}
+                            value={adminPassword}
+                            onChange={(e) => setAdminPassword(e.target.value)}
+                            placeholder="Voer het admin wachtwoord in"
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-0 top-0 h-full px-3"
+                            onClick={() => setShowAdminPassword(!showAdminPassword)}
+                          >
+                            {showAdminPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Dit wachtwoord is alleen bekend bij de beheerders
+                        </p>
+                      </div>
+                      
+                      <Button 
+                        onClick={handleAdminUpgrade}
+                        disabled={upgradeLoading || !adminPassword}
+                        variant="outline"
+                        className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                      >
+                        {upgradeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Shield className="mr-2 h-4 w-4" />
+                        Account upgraden naar admin
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <Separator />
