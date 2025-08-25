@@ -134,7 +134,11 @@ const Index = () => {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" className="h-16 flex-col space-y-1">
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col space-y-1"
+            onClick={() => navigate('/history')}
+          >
             <History className="h-5 w-5" />
             <span className="text-sm">Geschiedenis</span>
           </Button>
