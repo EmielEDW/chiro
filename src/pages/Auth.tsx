@@ -8,14 +8,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { useEffect } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAdminSignup, setIsAdminSignup] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -54,7 +57,7 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signUp(email, password, name);
+    const { data, error } = await signUp(email, password, name);
     
     if (error) {
       toast({
@@ -65,9 +68,21 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // If admin signup, update the user role
+      if (isAdminSignup && data.user) {
+        const { error: roleError } = await supabase
+          .from('profiles')
+          .update({ role: 'admin' })
+          .eq('id', data.user.id);
+          
+        if (roleError) {
+          console.error('Error setting admin role:', roleError);
+        }
+      }
+      
       toast({
         title: "Account aangemaakt!",
-        description: "Je kunt nu inloggen met je nieuwe account.",
+        description: isAdminSignup ? "Admin account aangemaakt! Je kunt nu inloggen." : "Je kunt nu inloggen met je nieuwe account.",
       });
     }
     
@@ -156,6 +171,17 @@ const Auth = () => {
                     required
                     minLength={6}
                   />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="admin-signup" 
+                    checked={isAdminSignup}
+                    onCheckedChange={(checked) => setIsAdminSignup(checked as boolean)}
+                  />
+                  <Label htmlFor="admin-signup" className="text-sm flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Registreren als admin
+                  </Label>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

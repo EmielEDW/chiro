@@ -8,12 +8,14 @@ import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, QrCode } from 'lucide-react';
+import { LogOut, History, QrCode, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const { user } = useAuth();
   const { profile, balance, isLoading, refreshBalance } = useProfile();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -63,6 +65,16 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
                 </div>
               </div>
+              
+              {profile?.role === 'admin' && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/admin')}
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              )}
               
               <Button
                 variant="ghost"
