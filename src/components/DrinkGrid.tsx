@@ -293,8 +293,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
               return (
                 <Card 
                   key={`favorite-${item.id}`} 
-                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-primary/10 to-white hover:from-primary/20 hover:to-white border-primary/30 ${!affordable || isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ring-2 ring-primary/50`}
-                  onClick={() => affordable && !isOutOfStock && logDrink(item)}
+                  className={`transition-all relative bg-gradient-to-t from-primary/10 to-white hover:from-primary/20 hover:to-white border-primary/30 ${!affordable || isOutOfStock ? 'opacity-50' : 'hover:shadow-lg'} ring-2 ring-primary/50`}
                 >
                   <CardContent className="p-4">
                     <div className="flex flex-col space-y-3">
@@ -398,8 +397,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
               return (
                 <Card 
                   key={item.id} 
-                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable || isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => affordable && !isOutOfStock && logDrink(item)}
+                  className={`transition-all relative bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable || isOutOfStock ? 'opacity-50' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
                 >
                   <CardContent className="p-4">
                     <div className="flex flex-col space-y-3">
