@@ -315,6 +315,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: number
       }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       consumption_source: "tap" | "qr" | "admin"
