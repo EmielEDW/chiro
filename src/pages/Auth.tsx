@@ -19,6 +19,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [chiroRole, setChiroRole] = useState('');
+  const [isAdminRegistration, setIsAdminRegistration] = useState(false);
   const [loading, setLoading] = useState(false);
   // Wachtwoord reset state
   const [showReset, setShowReset] = useState(false);
@@ -116,15 +117,27 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      // Update chiro role if provided
-      if (data.user && chiroRole) {
-        const { error: roleError } = await supabase
-          .from('profiles')
-          .update({ chiro_role: chiroRole })
-          .eq('id', data.user.id);
-          
-        if (roleError) {
-          console.error('Error updating profile:', roleError);
+      // Update chiro role and admin role if provided
+      if (data.user) {
+        const updates: any = {};
+        
+        if (chiroRole) {
+          updates.chiro_role = chiroRole;
+        }
+        
+        if (isAdminRegistration) {
+          updates.role = 'admin';
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          const { error: roleError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', data.user.id);
+            
+          if (roleError) {
+            console.error('Error updating profile:', roleError);
+          }
         }
       }
       
@@ -138,6 +151,7 @@ const Auth = () => {
       setPassword('');
       setName('');
       setChiroRole('');
+      setIsAdminRegistration(false);
     }
     
     setLoading(false);
@@ -324,18 +338,32 @@ const Auth = () => {
                       minLength={6}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="chiro-role">Chiro Rol</Label>
-                    <Select value={chiroRole} onValueChange={setChiroRole}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Kies je rol (optioneel)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="leiding">Leiding</SelectItem>
-                        <SelectItem value="vriend">Vriend</SelectItem>
-                        <SelectItem value="oud-leiding">Oud-leiding</SelectItem>
-                      </SelectContent>
-                    </Select>
+                   <div className="space-y-2">
+                     <Label htmlFor="chiro-role">Chiro Rol</Label>
+                     <Select value={chiroRole} onValueChange={setChiroRole}>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Kies je rol (optioneel)" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="leiding">Leiding</SelectItem>
+                         <SelectItem value="vriend">Vriend</SelectItem>
+                         <SelectItem value="oud-leiding">Oud-leiding</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   
+                   <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                     <Checkbox 
+                       id="admin-registration" 
+                       checked={isAdminRegistration}
+                       onCheckedChange={(checked) => setIsAdminRegistration(checked === true)}
+                     />
+                     <div className="flex items-center space-x-2">
+                       <Shield className="h-4 w-4 text-amber-600" />
+                       <Label htmlFor="admin-registration" className="text-sm font-medium text-amber-800">
+                         Registreer als admin (alleen voor beheerders)
+                       </Label>
+                     </div>
                    </div>
                    
                    <Button type="submit" className="w-full" disabled={loading}>
