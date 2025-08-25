@@ -11,6 +11,7 @@ import { ArrowLeft, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQueryClient } from '@tanstack/react-query';
 import ProfileImageUpload from '@/components/ProfileImageUpload';
 
@@ -197,12 +198,16 @@ const Settings = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="chiro-role">Chiro functie</Label>
-                    <Input
-                      id="chiro-role"
-                      value={chiroRole}
-                      onChange={(e) => setChiroRole(e.target.value)}
-                      placeholder="Bijv. Leider, Jin, Gids..."
-                    />
+                    <Select value={chiroRole} onValueChange={setChiroRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kies je rol" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="leiding">Leiding</SelectItem>
+                        <SelectItem value="vriend">Vriend</SelectItem>
+                        <SelectItem value="oud-leiding">Oud-leiding</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
