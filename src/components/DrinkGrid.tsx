@@ -256,7 +256,7 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                           <img 
                             src={item.image_url} 
                             alt={item.name}
-                            className="w-full h-32 object-contain bg-white rounded border"
+                            className="w-full h-32 object-contain rounded"
                           />
                         ) : (
                           <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
