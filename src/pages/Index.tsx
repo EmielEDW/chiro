@@ -62,6 +62,13 @@ const Index = () => {
             <div className="flex items-center space-x-3">
               <div className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
+                  {profile?.avatar_url && (
+                    <img 
+                      src={profile.avatar_url} 
+                      alt="Profile" 
+                      className="h-full w-full object-cover rounded-full"
+                    />
+                  )}
                   <AvatarFallback>
                     {profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                   </AvatarFallback>

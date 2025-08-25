@@ -11,12 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Shield } from 'lucide-react';
 import { useEffect } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [chiroRole, setChiroRole] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAdminSignup, setIsAdminSignup] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
@@ -126,15 +128,25 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      // If admin signup, update the user role
-      if (isAdminSignup && data.user) {
-        const { error: roleError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', data.user.id);
-          
-        if (roleError) {
-          console.error('Error setting admin role:', roleError);
+      // Update user role and chiro role
+      if (data.user) {
+        const updates: any = {};
+        if (isAdminSignup) {
+          updates.role = 'admin';
+        }
+        if (chiroRole) {
+          updates.chiro_role = chiroRole;
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          const { error: roleError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', data.user.id);
+            
+          if (roleError) {
+            console.error('Error updating profile:', roleError);
+          }
         }
       }
       
@@ -147,6 +159,7 @@ const Auth = () => {
       setEmail('');
       setPassword('');
       setName('');
+      setChiroRole('');
       setAdminPassword('');
       setIsAdminSignup(false);
     }
@@ -334,6 +347,19 @@ const Auth = () => {
                       required
                       minLength={6}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="chiro-role">Chiro Rol</Label>
+                    <Select value={chiroRole} onValueChange={setChiroRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Kies je rol (optioneel)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="leiding">Leiding</SelectItem>
+                        <SelectItem value="vriend">Vriend</SelectItem>
+                        <SelectItem value="oud-leiding">Oud-leiding</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox 
