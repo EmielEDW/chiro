@@ -489,7 +489,7 @@ const ProductManagement = () => {
                       <SelectTrigger className="bg-background border z-50">
                         <SelectValue placeholder="Selecteer categorie" />
                       </SelectTrigger>
-                      <SelectContent className="bg-background border shadow-lg z-50">
+                      <SelectContent className="bg-background border shadow-lg">
                         <SelectItem value="chips">Chips</SelectItem>
                         <SelectItem value="frisdranken">Frisdranken</SelectItem>
                         <SelectItem value="bieren">Bieren</SelectItem>
