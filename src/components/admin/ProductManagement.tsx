@@ -420,6 +420,7 @@ const ProductManagement = () => {
       chips: 'default',
       frisdranken: 'secondary',
       bieren: 'default',
+      sterke_dranken: 'default',
       mixed_drinks: 'secondary',
       andere: 'outline',
     };
@@ -428,6 +429,7 @@ const ProductManagement = () => {
       chips: 'Chips',
       frisdranken: 'Frisdranken',
       bieren: 'Bieren',
+      sterke_dranken: 'Sterke dranken',
       mixed_drinks: 'Mixed Drinks',
       andere: 'Andere',
     };
@@ -491,6 +493,7 @@ const ProductManagement = () => {
                         <SelectItem value="chips">Chips</SelectItem>
                         <SelectItem value="frisdranken">Frisdranken</SelectItem>
                         <SelectItem value="bieren">Bieren</SelectItem>
+                        <SelectItem value="sterke_dranken">Sterke dranken</SelectItem>
                         <SelectItem value="mixed_drinks">Mixed Drinks</SelectItem>
                         <SelectItem value="andere">Andere</SelectItem>
                       </SelectContent>

@@ -123,6 +123,8 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
         return 'bg-blue-100 text-blue-800';
       case 'bieren':
         return 'bg-amber-100 text-amber-800';
+      case 'sterke_dranken':
+        return 'bg-red-100 text-red-800';
       case 'mixed_drinks':
         return 'bg-purple-100 text-purple-800';
       case 'andere':
@@ -140,6 +142,8 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
         return 'Frisdranken';
       case 'bieren':
         return 'Bieren';
+      case 'sterke_dranken':
+        return 'Sterke dranken';
       case 'mixed_drinks':
         return 'Mixed Drinks';
       case 'andere':
@@ -155,14 +159,16 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
         return 1;
       case 'bieren':
         return 2;
-      case 'chips':
+      case 'sterke_dranken':
         return 3;
       case 'mixed_drinks':
         return 4;
-      case 'andere':
+      case 'chips':
         return 5;
-      default:
+      case 'andere':
         return 6;
+      default:
+        return 7;
     }
   };
 
