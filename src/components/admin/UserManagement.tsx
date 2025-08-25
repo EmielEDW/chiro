@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useState } from 'react';
 import UserConsumptionHistory from './UserConsumptionHistory';
 import BalanceAdjustmentDialog from './BalanceAdjustmentDialog';
+import RoleManagement from './RoleManagement';
 
 interface Profile {
   id: string;
@@ -172,7 +173,13 @@ const UserManagement = () => {
                         currentBalance={balances[user.id] || 0}
                       />
                       
-                      <Button 
+                      <RoleManagement
+                        userId={user.id}
+                        userName={user.name}
+                        currentRole={user.role}
+                      />
+                      
+                      <Button
                         variant="ghost" 
                         size="sm" 
                         onClick={() => {/* TODO: Delete user */}}

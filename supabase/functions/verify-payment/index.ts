@@ -25,20 +25,42 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.retrieve(session_id);
     
     if (session.payment_status === "paid") {
-      // Update the top-up record to paid
+      // Initialize Supabase service client
       const supabaseService = createClient(
         Deno.env.get("SUPABASE_URL") ?? "",
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
         { auth: { persistSession: false } }
       );
 
-      await supabaseService
+      // Verify the top-up record exists and is pending
+      const { data: topUp, error: fetchError } = await supabaseService
+        .from("top_ups")
+        .select("*")
+        .eq("provider_ref", session_id)
+        .eq("status", "pending")
+        .single();
+
+      if (fetchError || !topUp) {
+        throw new Error("Top-up record not found or already processed");
+      }
+
+      // Verify the amount matches
+      if (session.amount_total !== topUp.amount_cents) {
+        throw new Error("Payment amount mismatch");
+      }
+
+      // Update the top-up record to paid
+      const { error: updateError } = await supabaseService
         .from("top_ups")
         .update({ 
           status: "paid",
           updated_at: new Date().toISOString()
         })
         .eq("provider_ref", session_id);
+
+      if (updateError) {
+        throw new Error("Failed to update top-up status");
+      }
 
       return new Response(JSON.stringify({ 
         success: true, 

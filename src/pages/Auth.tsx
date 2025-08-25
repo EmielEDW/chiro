@@ -20,8 +20,6 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [chiroRole, setChiroRole] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isAdminSignup, setIsAdminSignup] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   // Wachtwoord reset state
   const [showReset, setShowReset] = useState(false);
   const [isRecovery, setIsRecovery] = useState(false);
@@ -106,16 +104,6 @@ const Auth = () => {
       return;
     }
 
-    // Validate admin password if admin signup is selected
-    if (isAdminSignup && adminPassword !== 'Drankenman123!') {
-      toast({
-        title: "Admin registratie mislukt",
-        description: "Onjuist admin wachtwoord. Contacteer de beheerder voor toegang.",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
-    }
 
     const { data, error } = await signUp(email, password, name);
     
@@ -128,40 +116,28 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
-      // Update user role and chiro role
-      if (data.user) {
-        const updates: any = {};
-        if (isAdminSignup) {
-          updates.role = 'admin';
-        }
-        if (chiroRole) {
-          updates.chiro_role = chiroRole;
-        }
-        
-        if (Object.keys(updates).length > 0) {
-          const { error: roleError } = await supabase
-            .from('profiles')
-            .update(updates)
-            .eq('id', data.user.id);
-            
-          if (roleError) {
-            console.error('Error updating profile:', roleError);
-          }
+      // Update chiro role if provided
+      if (data.user && chiroRole) {
+        const { error: roleError } = await supabase
+          .from('profiles')
+          .update({ chiro_role: chiroRole })
+          .eq('id', data.user.id);
+          
+        if (roleError) {
+          console.error('Error updating profile:', roleError);
         }
       }
       
       toast({
         title: "Account aangemaakt!",
-        description: isAdminSignup ? "Admin account aangemaakt! Je kunt nu inloggen." : "Je kunt nu inloggen met je nieuwe account.",
+        description: "Je kunt nu inloggen met je nieuwe account.",
       });
       
-      // Clear form including admin password
+      // Clear form
       setEmail('');
       setPassword('');
       setName('');
       setChiroRole('');
-      setAdminPassword('');
-      setIsAdminSignup(false);
     }
     
     setLoading(false);
@@ -360,45 +336,12 @@ const Auth = () => {
                         <SelectItem value="oud-leiding">Oud-leiding</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="admin-signup" 
-                      checked={isAdminSignup}
-                      onCheckedChange={(checked) => {
-                        setIsAdminSignup(checked as boolean);
-                        if (!checked) {
-                          setAdminPassword(''); // Clear admin password when unchecked
-                        }
-                      }}
-                    />
-                    <Label htmlFor="admin-signup" className="text-sm flex items-center gap-1">
-                      <Shield className="h-3 w-3" />
-                      Registreren als admin
-                    </Label>
-                  </div>
-                  
-                  {isAdminSignup && (
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-password">Admin wachtwoord</Label>
-                      <Input
-                        id="admin-password"
-                        type="password"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        placeholder="Voer admin wachtwoord in"
-                        required={isAdminSignup}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Contacteer de beheerder voor het admin wachtwoord
-                      </p>
-                    </div>
-                  )}
-                  
-                  <Button type="submit" className="w-full" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Account aanmaken
-                  </Button>
+                   </div>
+                   
+                   <Button type="submit" className="w-full" disabled={loading}>
+                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Account aanmaken
+                   </Button>
                 </form>
               </TabsContent>
             </Tabs>

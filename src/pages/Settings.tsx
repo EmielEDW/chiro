@@ -28,8 +28,6 @@ const Settings = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
-  const [adminUpgrade, setAdminUpgrade] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
@@ -106,48 +104,6 @@ const Settings = () => {
     setLoading(false);
   };
 
-  const handleAdminUpgrade = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    setLoading(true);
-
-    try {
-      const { data, error } = await supabase.rpc('upgrade_to_admin', {
-        _user_id: user?.id,
-        _admin_password: adminPassword
-      });
-
-      if (error) throw error;
-      
-      if (!data) {
-        toast({
-          title: "Admin upgrade mislukt",
-          description: "Onjuist admin wachtwoord. Contacteer de beheerder voor toegang.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
-
-      toast({
-        title: "Admin rechten toegekend!",
-        description: "Je account heeft nu admin rechten. Herlaad de pagina om alle functies te zien.",
-      });
-
-      setAdminUpgrade(false);
-      setAdminPassword('');
-    } catch (error: any) {
-      toast({
-        title: "Fout bij admin upgrade",
-        description: error.message || "Er ging iets mis bij het toekennen van admin rechten.",
-        variant: "destructive",
-      });
-    }
-
-    setLoading(false);
-  };
 
   if (!profile) {
     return <div className="text-center py-8">Laden...</div>;
@@ -297,62 +253,6 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Admin Upgrade */}
-        {profile.role !== 'admin' && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Admin rechten
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Heb je admin toegang gekregen? Upgrade je account naar admin rechten.
-                </p>
-
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="admin-upgrade" 
-                    checked={adminUpgrade}
-                    onCheckedChange={(checked) => {
-                      setAdminUpgrade(checked as boolean);
-                      if (!checked) setAdminPassword('');
-                    }}
-                  />
-                  <Label htmlFor="admin-upgrade" className="text-sm">
-                    Ik wil admin rechten aanvragen
-                  </Label>
-                </div>
-
-                {adminUpgrade && (
-                  <form onSubmit={handleAdminUpgrade} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="admin-password-upgrade">Admin wachtwoord</Label>
-                      <Input
-                        id="admin-password-upgrade"
-                        type="password"
-                        value={adminPassword}
-                        onChange={(e) => setAdminPassword(e.target.value)}
-                        placeholder="Voer admin wachtwoord in"
-                        required
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Contacteer de beheerder voor het admin wachtwoord
-                      </p>
-                    </div>
-
-                    <Button type="submit" disabled={loading || !adminPassword}>
-                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Admin rechten activeren
-                    </Button>
-                  </form>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Current Role Display */}
         <Card>
