@@ -52,6 +52,7 @@ const Leaderboard = () => {
         .select(`
           user_id,
           price_cents,
+          id,
           profiles!consumptions_user_id_fkey (
             name,
             avatar_url
@@ -62,8 +63,21 @@ const Leaderboard = () => {
       
       if (error) throw error;
       
+      // Get transaction reversals to exclude refunded consumptions
+      const { data: reversals, error: reversalsError } = await supabase
+        .from('transaction_reversals')
+        .select('original_transaction_id')
+        .eq('original_transaction_type', 'consumption');
+      
+      if (reversalsError) throw reversalsError;
+      
+      const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
+      
+      // Filter out refunded transactions
+      const validData = data.filter(consumption => !reversedIds.has(consumption.id));
+      
       // Group by user and sum spending
-      const userSpending = data.reduce((acc, consumption) => {
+      const userSpending = validData.reduce((acc, consumption) => {
         const userId = consumption.user_id;
         const userName = consumption.profiles?.name || 'Onbekend';
         const avatarUrl = consumption.profiles?.avatar_url;

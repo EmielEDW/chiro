@@ -71,6 +71,19 @@ const SalesDetailsDashboard = () => {
       
       if (consumptionsError) throw consumptionsError;
 
+      // Get transaction reversals to exclude refunded consumptions
+      const { data: reversals, error: reversalsError } = await supabase
+        .from('transaction_reversals')
+        .select('original_transaction_id')
+        .eq('original_transaction_type', 'consumption');
+      
+      if (reversalsError) throw reversalsError;
+      
+      const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
+      
+      // Filter out refunded transactions
+      const validConsumptionsData = consumptionsData.filter(c => !reversedIds.has(c.id));
+
       // Fetch top-ups (only paid ones for admin view)
       const { data: topUpsData, error: topUpsError } = await supabase
         .from('top_ups')
@@ -93,7 +106,7 @@ const SalesDetailsDashboard = () => {
       if (topUpsError) throw topUpsError;
 
       // Combine and format data
-      const consumptions = consumptionsData.map((item) => ({
+      const consumptions = validConsumptionsData.map((item) => ({
         id: item.id,
         created_at: item.created_at,
         price_cents: -item.price_cents, // Negative for expenses

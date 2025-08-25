@@ -13,7 +13,7 @@ const FinancialDashboard = () => {
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
       const { data: dailyData, error: dailyError } = await supabase
         .from('consumptions')
-        .select('created_at, price_cents')
+        .select('id, created_at, price_cents')
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at');
 
@@ -23,12 +23,27 @@ const FinancialDashboard = () => {
       const { data: productData, error: productError } = await supabase
         .from('consumptions')
         .select(`
+          id,
           items (name),
           price_cents
         `)
         .gte('created_at', thirtyDaysAgo.toISOString());
 
       if (productError) throw productError;
+
+      // Get transaction reversals to exclude refunded consumptions
+      const { data: reversals, error: reversalsError } = await supabase
+        .from('transaction_reversals')
+        .select('original_transaction_id')
+        .eq('original_transaction_type', 'consumption');
+      
+      if (reversalsError) throw reversalsError;
+      
+      const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
+      
+      // Filter out refunded transactions
+      const validDailyData = dailyData.filter(c => !reversedIds.has(c.id));
+      const validProductData = productData.filter(c => !reversedIds.has(c.id));
 
       // Get top-up data
       const { data: topUpData, error: topUpError } = await supabase
@@ -41,7 +56,7 @@ const FinancialDashboard = () => {
 
       // Process daily revenue
       const dailyRevenue: { [key: string]: number } = {};
-      dailyData.forEach(item => {
+      validDailyData.forEach(item => {
         const date = new Date(item.created_at).toISOString().split('T')[0];
         dailyRevenue[date] = (dailyRevenue[date] || 0) + item.price_cents;
       });
@@ -56,7 +71,7 @@ const FinancialDashboard = () => {
 
       // Process product sales
       const productSales: { [key: string]: { count: number; revenue: number } } = {};
-      productData.forEach(item => {
+      validProductData.forEach(item => {
         const name = item.items?.name || 'Onbekend';
         if (!productSales[name]) {
           productSales[name] = { count: 0, revenue: 0 };
@@ -75,16 +90,16 @@ const FinancialDashboard = () => {
         }));
 
       // Calculate totals
-      const totalRevenue = dailyData.reduce((sum, item) => sum + item.price_cents, 0);
+      const totalRevenue = validDailyData.reduce((sum, item) => sum + item.price_cents, 0);
       const totalTopUps = topUpData.reduce((sum, item) => sum + item.amount_cents, 0);
-      const totalTransactions = dailyData.length;
+      const totalTransactions = validDailyData.length;
       const totalTopUpTransactions = topUpData.length;
 
       // Calculate trends (compare last 15 days vs previous 15 days)
-      const last15Days = dailyData.filter(item => 
+      const last15Days = validDailyData.filter(item => 
         new Date(item.created_at) >= new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
       );
-      const previous15Days = dailyData.filter(item => {
+      const previous15Days = validDailyData.filter(item => {
         const date = new Date(item.created_at);
         return date >= new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) && 
                date < new Date(Date.now() - 15 * 24 * 60 * 60 * 1000);

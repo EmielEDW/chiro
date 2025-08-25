@@ -35,11 +35,12 @@ const AdminDashboard = () => {
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [usersResult, itemsResult, consumptionsResult, revenueResult] = await Promise.all([
+      const [usersResult, itemsResult, consumptionsResult, revenueResult, reversalsResult] = await Promise.all([
         supabase.from('profiles').select('id, role, active').eq('active', true),
         supabase.from('items').select('id, stock_quantity, active').eq('active', true),
         supabase.from('consumptions').select('id, price_cents, created_at').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()),
-        supabase.from('consumptions').select('price_cents, created_at').gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        supabase.from('consumptions').select('id, price_cents, created_at').gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        supabase.from('transaction_reversals').select('original_transaction_id').eq('original_transaction_type', 'consumption')
       ]);
 
       const totalUsers = usersResult.data?.length || 0;
@@ -48,9 +49,14 @@ const AdminDashboard = () => {
         item.stock_quantity !== null && item.stock_quantity < 10
       ).length || 0;
       
-      const monthlyRevenue = consumptionsResult.data?.reduce((sum, c) => sum + c.price_cents, 0) || 0;
-      const weeklyRevenue = revenueResult.data?.reduce((sum, c) => sum + c.price_cents, 0) || 0;
-      const monthlyTransactions = consumptionsResult.data?.length || 0;
+      // Filter out refunded transactions
+      const reversedIds = new Set(reversalsResult.data?.map(r => r.original_transaction_id) || []);
+      const validMonthlyConsumptions = consumptionsResult.data?.filter(c => !reversedIds.has(c.id)) || [];
+      const validWeeklyConsumptions = revenueResult.data?.filter(c => !reversedIds.has(c.id)) || [];
+      
+      const monthlyRevenue = validMonthlyConsumptions.reduce((sum, c) => sum + c.price_cents, 0);
+      const weeklyRevenue = validWeeklyConsumptions.reduce((sum, c) => sum + c.price_cents, 0);
+      const monthlyTransactions = validMonthlyConsumptions.length;
 
       return {
         totalUsers,
