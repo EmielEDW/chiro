@@ -3,11 +3,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Banknote, Plus } from 'lucide-react';
+import { CreditCard, Banknote, Plus, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useProfile } from '@/hooks/useProfile';
 
 interface TopUpDialogProps {
   children: React.ReactNode;
@@ -17,11 +18,13 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const [amount, setAmount] = useState('');
   const [method, setMethod] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+  const { refreshBalance } = useProfile();
 
   const quickAmounts = [5, 10, 20, 50];
 
-  const handleTopUp = () => {
+  const handleTopUp = async () => {
     if (!amount || !method) {
       toast({
         title: "Vul alle velden in",
@@ -31,15 +34,59 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
       return;
     }
 
-    // For now, just show a placeholder message
-    toast({
-      title: "Betalingsfunctionaliteit",
-      description: `€${amount} opladen via ${method} wordt binnenkort toegevoegd!`,
-    });
-    
-    setIsOpen(false);
-    setAmount('');
-    setMethod('');
+    const numAmount = parseFloat(amount);
+    if (numAmount <= 0 || numAmount > 100) {
+      toast({
+        title: "Ongeldig bedrag",
+        description: "Bedrag moet tussen €0.01 en €100 zijn.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (method === 'cash') {
+      toast({
+        title: "Cash betaling",
+        description: "Ga naar de bar om je saldo op te laden met cash.",
+      });
+      setIsOpen(false);
+      setAmount('');
+      setMethod('');
+      return;
+    }
+
+    // Handle Stripe payment
+    if (method === 'bancontact') {
+      setIsProcessing(true);
+      try {
+        const { data, error } = await supabase.functions.invoke('create-payment', {
+          body: { amount: numAmount }
+        });
+
+        if (error) throw error;
+
+        // Open Stripe checkout in a new tab
+        window.open(data.url, '_blank');
+        
+        setIsOpen(false);
+        setAmount('');
+        setMethod('');
+        
+        toast({
+          title: "Betaling gestart",
+          description: "Je wordt doorgestuurd naar Stripe om de betaling te voltooien.",
+        });
+      } catch (error) {
+        console.error('Payment error:', error);
+        toast({
+          title: "Betalingsfout",
+          description: "Er is iets misgegaan. Probeer het opnieuw.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsProcessing(false);
+      }
+    }
   };
 
   const formatCurrency = (cents: number) => {
@@ -151,9 +198,13 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
             <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Annuleren
             </Button>
-            <Button onClick={handleTopUp} className="flex-1">
-              <Plus className="mr-2 h-4 w-4" />
-              Laden
+            <Button onClick={handleTopUp} disabled={isProcessing} className="flex-1">
+              {isProcessing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
+              {isProcessing ? 'Laden...' : 'Laden'}
             </Button>
           </div>
         </div>
