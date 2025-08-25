@@ -241,6 +241,48 @@ export type Database = {
           },
         ]
       }
+      mixed_drink_components: {
+        Row: {
+          component_item_id: string
+          created_at: string
+          id: string
+          mixed_drink_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          component_item_id: string
+          created_at?: string
+          id?: string
+          mixed_drink_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          component_item_id?: string
+          created_at?: string
+          id?: string
+          mixed_drink_id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mixed_drink_components_component_item_id_fkey"
+            columns: ["component_item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mixed_drink_components_mixed_drink_id_fkey"
+            columns: ["mixed_drink_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -423,6 +465,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_mixed_drink_prices: {
+        Args: { mixed_drink_item_id: string }
+        Returns: {
+          calculated_purchase_price: number
+          calculated_sell_price: number
+        }[]
+      }
+      calculate_mixed_drink_stock: {
+        Args: { mixed_drink_item_id: string }
+        Returns: number
+      }
       calculate_user_balance: {
         Args: { user_uuid: string }
         Returns: number

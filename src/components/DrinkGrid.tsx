@@ -16,6 +16,7 @@ interface Item {
   description?: string;
   image_url?: string;
   stock_quantity?: number;
+  calculated_stock?: number;
 }
 
 interface DrinkGridProps {
@@ -32,7 +33,7 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: itemsData, error } = await supabase
         .from('items')
         .select('*')
         .eq('active', true)
@@ -40,7 +41,31 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
         .order('price_cents');
       
       if (error) throw error;
-      return data as Item[];
+
+      // Voor mixed drinks, bereken de beschikbare stock op basis van componenten
+      const itemsWithCalculatedStock = await Promise.all(
+        (itemsData || []).map(async (item) => {
+          if (item.category === 'mixed_drinks') {
+            try {
+              const { data: stockResult, error: stockError } = await supabase
+                .rpc('calculate_mixed_drink_stock', { mixed_drink_item_id: item.id });
+              
+              if (stockError) {
+                console.warn('Error calculating mixed drink stock:', stockError);
+                return { ...item, calculated_stock: 0 };
+              }
+              
+              return { ...item, calculated_stock: stockResult || 0 };
+            } catch (error) {
+              console.warn('Error calculating stock for mixed drink:', error);
+              return { ...item, calculated_stock: 0 };
+            }
+          }
+          return { ...item, calculated_stock: item.stock_quantity || 0 };
+        })
+      );
+
+      return itemsWithCalculatedStock as Item[];
     },
   });
 
@@ -240,7 +265,9 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
             {groupedItems[category].map((item) => {
               const affordable = canAfford(item.price_cents);
               const isFavorite = favorites.includes(item.id);
-              const isLowStock = item.stock_quantity !== null && item.stock_quantity < 10;
+              const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
+              const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
+              const isOutOfStock = stockValue === 0;
               
               return (
                 <Card 
@@ -293,11 +320,19 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                             {formatCurrency(item.price_cents)}
                           </Badge>
                           
-                          {isLowStock && (
+                          {isOutOfStock ? (
                             <Badge variant="destructive" className="text-xs">
-                              Weinig voorraad: {item.stock_quantity}
+                              Niet beschikbaar
                             </Badge>
-                          )}
+                          ) : isLowStock ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Weinig voorraad: {stockValue}
+                            </Badge>
+                          ) : item.category === 'mixed_drinks' ? (
+                            <Badge variant="default" className="text-xs">
+                              Beschikbaar
+                            </Badge>
+                          ) : null}
                         </div>
                       </div>
                       
