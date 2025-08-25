@@ -445,7 +445,7 @@ export default function History() {
                         <Badge variant="secondary" className="text-xs">
                           Terugbetaald
                         </Badge>
-                      ) : (
+                       ) : item.type === 'consumption' ? (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -483,7 +483,7 @@ export default function History() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
-                      )}
+                      ) : null}
                     </TableCell>
                   </TableRow>
                 ))}
