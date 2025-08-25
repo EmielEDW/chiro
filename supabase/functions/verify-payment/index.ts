@@ -32,16 +32,31 @@ serve(async (req) => {
         { auth: { persistSession: false } }
       );
 
-      // Verify the top-up record exists and is pending
+      // Verify the top-up record exists (pending or already paid)
       const { data: topUp, error: fetchError } = await supabaseService
         .from("top_ups")
         .select("*")
         .eq("provider_ref", session_id)
-        .eq("status", "pending")
         .single();
 
       if (fetchError || !topUp) {
-        throw new Error("Top-up record not found or already processed");
+        throw new Error("Top-up record not found");
+      }
+
+      // If already paid, return success
+      if (topUp.status === "paid") {
+        return new Response(JSON.stringify({ 
+          success: true, 
+          amount: session.amount_total 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      // If not pending, something is wrong
+      if (topUp.status !== "pending") {
+        throw new Error("Top-up record has invalid status");
       }
 
       // Verify the amount matches
