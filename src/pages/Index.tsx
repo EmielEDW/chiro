@@ -138,7 +138,11 @@ const Index = () => {
             <History className="h-5 w-5" />
             <span className="text-sm">Geschiedenis</span>
           </Button>
-          <Button variant="outline" className="h-16 flex-col space-y-1">
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col space-y-1"
+            onClick={() => navigate('/scan')}
+          >
             <QrCode className="h-5 w-5" />
             <span className="text-sm">QR Scan</span>
           </Button>
