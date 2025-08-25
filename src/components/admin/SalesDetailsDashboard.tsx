@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,12 +38,18 @@ const SalesDetailsDashboard = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Default to last 30 days
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  // Memoize default dates to prevent infinite re-renders
+  const defaultDates = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return {
+      startDate: thirtyDaysAgo,
+      endDate: new Date()
+    };
+  }, []);
   
-  const startDate = dateFrom || thirtyDaysAgo;
-  const endDate = dateTo || new Date();
+  const startDate = dateFrom || defaultDates.startDate;
+  const endDate = dateTo || defaultDates.endDate;
 
   const { data: salesDetails = [], isLoading } = useQuery({
     queryKey: ['sales-details', startDate.toISOString(), endDate.toISOString()],
