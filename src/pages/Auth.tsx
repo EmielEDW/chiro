@@ -19,6 +19,7 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAdminSignup, setIsAdminSignup] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -57,6 +58,17 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
+    // Validate admin password if admin signup is selected
+    if (isAdminSignup && adminPassword !== 'Drankenman123!') {
+      toast({
+        title: "Admin registratie mislukt",
+        description: "Onjuist admin wachtwoord. Contacteer de beheerder voor toegang.",
+        variant: "destructive",
+      });
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await signUp(email, password, name);
     
     if (error) {
@@ -84,6 +96,13 @@ const Auth = () => {
         title: "Account aangemaakt!",
         description: isAdminSignup ? "Admin account aangemaakt! Je kunt nu inloggen." : "Je kunt nu inloggen met je nieuwe account.",
       });
+      
+      // Clear form including admin password
+      setEmail('');
+      setPassword('');
+      setName('');
+      setAdminPassword('');
+      setIsAdminSignup(false);
     }
     
     setLoading(false);
@@ -183,13 +202,36 @@ const Auth = () => {
                   <Checkbox 
                     id="admin-signup" 
                     checked={isAdminSignup}
-                    onCheckedChange={(checked) => setIsAdminSignup(checked as boolean)}
+                    onCheckedChange={(checked) => {
+                      setIsAdminSignup(checked as boolean);
+                      if (!checked) {
+                        setAdminPassword(''); // Clear admin password when unchecked
+                      }
+                    }}
                   />
                   <Label htmlFor="admin-signup" className="text-sm flex items-center gap-1">
                     <Shield className="h-3 w-3" />
                     Registreren als admin
                   </Label>
                 </div>
+                
+                {isAdminSignup && (
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-password">Admin wachtwoord</Label>
+                    <Input
+                      id="admin-password"
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Voer admin wachtwoord in"
+                      required={isAdminSignup}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Contacteer de beheerder voor het admin wachtwoord
+                    </p>
+                  </div>
+                )}
+                
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Account aanmaken
