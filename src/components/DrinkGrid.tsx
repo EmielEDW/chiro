@@ -202,11 +202,11 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                       <img 
                         src={item.image_url} 
                         alt={item.name}
-                        className="w-full h-16 object-cover rounded"
+                        className="w-full h-32 object-contain bg-white rounded border"
                       />
                     ) : (
-                      <div className="w-full h-16 bg-muted rounded flex items-center justify-center">
-                        <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                      <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
                       </div>
                     )}
                     
