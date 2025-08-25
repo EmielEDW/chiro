@@ -92,12 +92,12 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
 
   const getCategoryColor = (category?: string) => {
     switch (category) {
-      case 'drank':
+      case 'frisdrank_pils_chips':
         return 'bg-blue-100 text-blue-800';
-      case 'eten':
-        return 'bg-green-100 text-green-800';
-      case 'andere':
-        return 'bg-gray-100 text-gray-800';
+      case 'energy_kriek':
+        return 'bg-purple-100 text-purple-800';
+      case 'mixed_drink':
+        return 'bg-orange-100 text-orange-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -105,14 +105,27 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
 
   const getCategoryName = (category?: string) => {
     switch (category) {
-      case 'drank':
-        return 'Drank';
-      case 'eten':
-        return 'Eten';
-      case 'andere':
-        return 'Andere';
+      case 'frisdrank_pils_chips':
+        return 'Dranken & Chips';
+      case 'energy_kriek':
+        return 'Energy & Kriek';
+      case 'mixed_drink':
+        return 'Mixed Drinks';
       default:
-        return 'Onbekend';
+        return 'Andere';
+    }
+  };
+
+  const getCategoryOrder = (category?: string) => {
+    switch (category) {
+      case 'frisdrank_pils_chips':
+        return 1;
+      case 'energy_kriek':
+        return 2;
+      case 'mixed_drink':
+        return 3;
+      default:
+        return 4;
     }
   };
 
@@ -170,108 +183,132 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
     );
   }
 
-  // Sort items with favorites first
-  const sortedItems = items.sort((a, b) => {
-    const aIsFavorite = favorites.includes(a.id);
-    const bIsFavorite = favorites.includes(b.id);
-    
-    if (aIsFavorite && !bIsFavorite) return -1;
-    if (!aIsFavorite && bIsFavorite) return 1;
-    return a.price_cents - b.price_cents;
+  // Group items by category and sort within each category
+  const groupedItems = items.reduce((acc, item) => {
+    const category = item.category || 'other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(item);
+    return acc;
+  }, {} as Record<string, Item[]>);
+
+  // Sort categories by order and items within each category (favorites first, then by price)
+  const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
+    return getCategoryOrder(a) - getCategoryOrder(b);
+  });
+
+  // Sort items within each category
+  Object.keys(groupedItems).forEach(category => {
+    groupedItems[category].sort((a, b) => {
+      const aIsFavorite = favorites.includes(a.id);
+      const bIsFavorite = favorites.includes(b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return a.price_cents - b.price_cents;
+    });
   });
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Drankjes</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {sortedItems.map((item) => {
-          const affordable = canAfford(item.price_cents);
-          const isFavorite = favorites.includes(item.id);
-          const isLowStock = item.stock_quantity !== null && item.stock_quantity < 10;
-          
-          return (
-            <Card 
-              key={item.id} 
-              className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
-              onClick={() => affordable && logDrink(item)}
+    <div className="space-y-6">
+      {sortedCategories.map((category) => (
+        <div key={category} className="space-y-4">
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">{getCategoryName(category)}</h3>
+            <Badge 
+              variant="secondary" 
+              className={`text-xs ${getCategoryColor(category)}`}
             >
-              <CardContent className="p-4">
-                <div className="flex flex-col space-y-3">
-                  {/* Image placeholder */}
-                  <div className="relative">
-                    {item.image_url ? (
-                      <img 
-                        src={item.image_url} 
-                        alt={item.name}
-                        className="w-full h-32 object-contain bg-white rounded border"
-                      />
-                    ) : (
-                      <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
-                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+              {groupedItems[category].length} items
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            {groupedItems[category].map((item) => {
+              const affordable = canAfford(item.price_cents);
+              const isFavorite = favorites.includes(item.id);
+              const isLowStock = item.stock_quantity !== null && item.stock_quantity < 10;
+              
+              return (
+                <Card 
+                  key={item.id} 
+                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => affordable && logDrink(item)}
+                >
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-3">
+                      {/* Image placeholder */}
+                      <div className="relative">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-32 object-contain bg-white rounded border"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
+                        )}
+                        
+                        {/* Favorite button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
+                        >
+                          {isFavorite ? (
+                            <Heart className="h-3 w-3 fill-primary text-primary" />
+                          ) : (
+                            <HeartOff className="h-3 w-3" />
+                          )}
+                        </Button>
                       </div>
-                    )}
-                    
-                    {/* Favorite button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="absolute top-1 right-1 h-6 w-6 p-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                      }}
-                    >
-                      {isFavorite ? (
-                        <Heart className="h-3 w-3 fill-primary text-primary" />
-                      ) : (
-                        <HeartOff className="h-3 w-3" />
-                      )}
-                    </Button>
-                  </div>
-                  
-                  <div className="text-center space-y-2">
-                    <h4 className="font-medium text-sm">{item.name}</h4>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
-                    )}
-                    
-                    <div className="flex flex-col items-center gap-1">
-                      <Badge variant="outline" className="text-xs">
-                        {formatCurrency(item.price_cents)}
-                      </Badge>
                       
-                      {item.category && (
-                        <Badge variant="secondary" className={`text-xs ${getCategoryColor(item.category)}`}>
-                          {getCategoryName(item.category)}
-                        </Badge>
-                      )}
+                      <div className="text-center space-y-2">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                        
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {formatCurrency(item.price_cents)}
+                          </Badge>
+                          
+                          {isLowStock && (
+                            <Badge variant="destructive" className="text-xs">
+                              Weinig voorraad: {item.stock_quantity}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                       
-                      {isLowStock && (
-                        <Badge variant="destructive" className="text-xs">
-                          Weinig voorraad: {item.stock_quantity}
-                        </Badge>
-                      )}
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          logDrink(item);
+                        }}
+                        disabled={!affordable}
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Registreer
+                      </Button>
                     </div>
-                  </div>
-                  
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      logDrink(item);
-                    }}
-                    disabled={!affordable}
-                    size="sm"
-                    className="w-full"
-                  >
-                    <Plus className="mr-1 h-3 w-3" />
-                    Registreer
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
