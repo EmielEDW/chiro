@@ -500,6 +500,7 @@ export type Database = {
         | "bieren"
         | "mixed_drinks"
         | "andere"
+        | "sterke_dranken"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -636,6 +637,7 @@ export const Constants = {
         "bieren",
         "mixed_drinks",
         "andere",
+        "sterke_dranken",
       ],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],
