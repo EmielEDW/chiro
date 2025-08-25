@@ -14,6 +14,8 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Eye, CreditCard, History, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import UserConsumptionHistory from './UserConsumptionHistory';
 import BalanceAdjustmentDialog from './BalanceAdjustmentDialog';
@@ -31,6 +33,7 @@ interface Profile {
 
 const UserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -73,6 +76,31 @@ const UserManagement = () => {
 
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Gebruiker verwijderd",
+        description: `${userName} is succesvol verwijderd.`,
+      });
+
+      // Refresh the users list
+      window.location.reload();
+    } catch (error: any) {
+      toast({
+        title: "Fout bij verwijderen",
+        description: error.message || "Er ging iets mis bij het verwijderen van de gebruiker.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -179,14 +207,35 @@ const UserManagement = () => {
                         currentRole={user.role}
                       />
                       
-                      <Button
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => {/* TODO: Delete user */}}
-                        title="Gebruiker verwijderen"
-                      >
-                        <UserX className="h-4 w-4" />
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            title="Gebruiker verwijderen"
+                          >
+                            <UserX className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Gebruiker verwijderen</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Weet je zeker dat je <strong>{user.name}</strong> wilt verwijderen? 
+                              Deze actie kan niet ongedaan worden gemaakt. Alle data van deze gebruiker wordt permanent verwijderd.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                            <AlertDialogAction 
+                              onClick={() => handleDeleteUser(user.id, user.name)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Verwijderen
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
