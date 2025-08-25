@@ -12,12 +12,14 @@ import { ArrowLeft, Upload, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Settings = () => {
   const { user } = useAuth();
   const { profile, updateProfile } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [name, setName] = useState(profile?.name || '');
   const [chiroRole, setChiroRole] = useState(profile?.chiro_role || '');
@@ -107,21 +109,29 @@ const Settings = () => {
   const handleAdminUpgrade = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (adminPassword !== 'Drankenman123!') {
-      toast({
-        title: "Admin upgrade mislukt",
-        description: "Onjuist admin wachtwoord. Contacteer de beheerder voor toegang.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
 
     try {
-      await updateProfile.mutateAsync({
-        role: 'admin',
+      // Use the secure database function instead of direct update
+      const { data, error } = await supabase.rpc('upgrade_to_admin', {
+        _user_id: user?.id,
+        _admin_password: adminPassword
       });
+
+      if (error) throw error;
+      
+      if (!data) {
+        toast({
+          title: "Admin upgrade mislukt",
+          description: "Onjuist admin wachtwoord. Contacteer de beheerder voor toegang.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Force refresh of profile data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
 
       toast({
         title: "Admin rechten toegekend!",
@@ -130,10 +140,10 @@ const Settings = () => {
 
       setAdminUpgrade(false);
       setAdminPassword('');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Fout bij admin upgrade",
-        description: "Er ging iets mis bij het toekennen van admin rechten.",
+        description: error.message || "Er ging iets mis bij het toekennen van admin rechten.",
         variant: "destructive",
       });
     }

@@ -398,6 +398,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      upgrade_to_admin: {
+        Args: { _admin_password: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       consumption_source: "tap" | "qr" | "admin"
