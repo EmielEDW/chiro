@@ -20,7 +20,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  const { refreshBalance } = useProfile();
+  const { refreshBalance, profile } = useProfile();
 
   const quickAmounts = [5, 10, 20, 50];
 
@@ -193,7 +193,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
                 {method === 'banktransfer' && (
                   <div className="mt-2 text-xs text-muted-foreground">
                     <p><strong>Rekeningnummer:</strong> BE52 0637 7145 7809</p>
-                    <p><strong>Mededeling:</strong> Opladen saldo - {amount} euro</p>
+                    <p><strong>Mededeling:</strong> Opladen dranksaldo {profile?.name || 'onbekend'}</p>
                   </div>
                 )}
               </CardContent>
