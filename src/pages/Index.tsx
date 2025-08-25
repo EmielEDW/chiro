@@ -146,6 +146,9 @@ const Index = () => {
 
         {/* Recent Activity */}
         <ConsumptionHistory />
+        
+        {/* Leaderboard */}
+        <Leaderboard />
       </main>
     </div>
   );

@@ -12,10 +12,11 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, CreditCard, History } from 'lucide-react';
+import { Eye, CreditCard, History, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useState } from 'react';
 import UserConsumptionHistory from './UserConsumptionHistory';
+import BalanceAdjustmentDialog from './BalanceAdjustmentDialog';
 
 interface Profile {
   id: string;
@@ -165,14 +166,11 @@ const UserManagement = () => {
                         </DialogContent>
                       </Dialog>
                       
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        onClick={() => {/* TODO: Balance adjustment */}}
-                        title="Saldo aanpassen"
-                      >
-                        <CreditCard className="h-4 w-4" />
-                      </Button>
+                      <BalanceAdjustmentDialog
+                        userId={user.id}
+                        userName={user.name}
+                        currentBalance={balances[user.id] || 0}
+                      />
                       
                       <Button 
                         variant="ghost" 
@@ -180,7 +178,7 @@ const UserManagement = () => {
                         onClick={() => {/* TODO: Delete user */}}
                         title="Gebruiker verwijderen"
                       >
-                        <Eye className="h-4 w-4" />
+                        <UserX className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>

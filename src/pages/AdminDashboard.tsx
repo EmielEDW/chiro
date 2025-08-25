@@ -21,7 +21,7 @@ import UserManagement from '@/components/admin/UserManagement';
 import StockManagement from '@/components/admin/StockManagement';
 import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
-import FinancialDashboard from '@/components/admin/FinancialDashboard';
+import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -141,11 +141,11 @@ const AdminDashboard = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="financial" className="space-y-4">
+        <Tabs defaultValue="overview" className="space-y-4">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="financial" className="flex items-center gap-2">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
-              Financieel
+              Overzicht
             </TabsTrigger>
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
@@ -155,14 +155,14 @@ const AdminDashboard = () => {
               <Package className="h-4 w-4" />
               Voorraad
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
-              Instellingen
+              Analytics
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="financial">
-            <FinancialDashboard />
+          <TabsContent value="overview">
+            <InventoryValueDashboard />
           </TabsContent>
 
           <TabsContent value="users">
@@ -178,45 +178,6 @@ const AdminDashboard = () => {
           
           <TabsContent value="analytics">
             <SalesDetailsDashboard />
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Systeem Instellingen</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Betalingsinstellingen</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Configureer Stripe betalingen en topup opties
-                      </p>
-                      <Button variant="outline" size="sm">
-                        Configureren
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Notificaties</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Stel waarschuwingen in voor lage voorraad
-                      </p>
-                      <Button variant="outline" size="sm">
-                        Configureren
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </div>
-              </CardContent>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
