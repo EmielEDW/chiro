@@ -273,13 +273,6 @@ const Settings = () => {
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium">Credit toegestaan:</span>
-              <span className="text-sm">
-                {profile.allow_credit ? 'Ja' : 'Nee'}
-              </span>
-            </div>
-            
-            <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Lid sinds:</span>
               <span className="text-sm">
                 {new Date(profile.created_at).toLocaleDateString('nl-BE')}

@@ -6,10 +6,9 @@ import { Wallet, Plus } from 'lucide-react';
 interface BalanceCardProps {
   balance: number;
   onTopUp: () => void;
-  allowCredit?: boolean;
 }
 
-const BalanceCard = ({ balance, onTopUp, allowCredit = false }: BalanceCardProps) => {
+const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
   };

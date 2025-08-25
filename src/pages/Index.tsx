@@ -127,7 +127,6 @@ const Index = () => {
             <BalanceCard 
               balance={balance} 
               onTopUp={() => {}}
-              allowCredit={profile?.allow_credit || false}
             />
           </div>
         </TopUpDialog>
@@ -147,7 +146,6 @@ const Index = () => {
         {/* Drinks Grid */}
         <DrinkGrid 
           balance={balance}
-          allowCredit={profile?.allow_credit || false}
           onDrinkLogged={handleRefreshBalance}
         />
 

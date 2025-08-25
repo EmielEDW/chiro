@@ -21,11 +21,10 @@ interface Item {
 
 interface DrinkGridProps {
   balance: number;
-  allowCredit: boolean;
   onDrinkLogged: () => void;
 }
 
-const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
+const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -112,7 +111,7 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
   };
 
   const canAfford = (price: number) => {
-    return allowCredit || balance >= price;
+    return balance >= price;
   };
 
   const getCategoryColor = (category?: string) => {
@@ -173,6 +172,17 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
   };
 
   const logDrink = async (item: Item) => {
+    const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
+    
+    if (stockValue === 0) {
+      toast({
+        title: "Niet op voorraad",
+        description: "Dit product is momenteel niet beschikbaar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!canAfford(item.price_cents)) {
       toast({
         title: "Onvoldoende saldo",
@@ -278,8 +288,8 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
               return (
                 <Card 
                   key={item.id} 
-                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
-                  onClick={() => affordable && logDrink(item)}
+                  className={`transition-all relative cursor-pointer bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable || isOutOfStock ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
+                  onClick={() => affordable && !isOutOfStock && logDrink(item)}
                 >
                   <CardContent className="p-4">
                     <div className="flex flex-col space-y-3">
@@ -347,7 +357,7 @@ const DrinkGrid = ({ balance, allowCredit, onDrinkLogged }: DrinkGridProps) => {
                           e.stopPropagation();
                           logDrink(item);
                         }}
-                        disabled={!affordable}
+                        disabled={!affordable || isOutOfStock}
                         size="sm"
                         className="w-full"
                       >

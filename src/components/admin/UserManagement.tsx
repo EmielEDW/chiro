@@ -133,7 +133,6 @@ const UserManagement = () => {
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Saldo</TableHead>
-                <TableHead>Credit toegestaan</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Acties</TableHead>
               </TableRow>
@@ -162,11 +161,6 @@ const UserManagement = () => {
                     }`}>
                       {formatCurrency(balances[user.id] || 0)}
                     </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.allow_credit ? "default" : "secondary"}>
-                      {user.allow_credit ? "Ja" : "Nee"}
-                    </Badge>
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.active ? "default" : "secondary"}>
