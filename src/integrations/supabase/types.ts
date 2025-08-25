@@ -441,7 +441,12 @@ export type Database = {
     }
     Enums: {
       consumption_source: "tap" | "qr" | "admin"
-      drink_category: "frisdrank_pils_chips" | "energy_kriek" | "mixed_drink"
+      drink_category:
+        | "chips"
+        | "frisdranken"
+        | "bieren"
+        | "mixed_drinks"
+        | "andere"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -572,7 +577,13 @@ export const Constants = {
   public: {
     Enums: {
       consumption_source: ["tap", "qr", "admin"],
-      drink_category: ["frisdrank_pils_chips", "energy_kriek", "mixed_drink"],
+      drink_category: [
+        "chips",
+        "frisdranken",
+        "bieren",
+        "mixed_drinks",
+        "andere",
+      ],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],
     },
