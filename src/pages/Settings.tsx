@@ -29,6 +29,8 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [upgradeToAdmin, setUpgradeToAdmin] = useState(false);
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +104,38 @@ const Settings = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleAdminUpgrade = async () => {
+    if (!upgradeToAdmin) return;
+    
+    setUpgradeLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: 'admin' })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Account geüpgraded",
+        description: "Je account heeft nu admin rechten.",
+      });
+
+      // Refresh profile data
+      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      setUpgradeToAdmin(false);
+    } catch (error: any) {
+      toast({
+        title: "Fout bij upgraden",
+        description: error.message || "Er ging iets mis bij het upgraden van je account.",
+        variant: "destructive",
+      });
+    }
+
+    setUpgradeLoading(false);
   };
 
 
@@ -271,6 +305,42 @@ const Settings = () => {
                  profile.role === 'treasurer' ? 'Penningmeester' : 'Gebruiker'}
               </span>
             </div>
+            
+            {/* Admin Upgrade Option - only show if not already admin */}
+            {profile.role !== 'admin' && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <Checkbox 
+                      id="admin-upgrade" 
+                      checked={upgradeToAdmin}
+                      onCheckedChange={(checked) => setUpgradeToAdmin(checked === true)}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Shield className="h-4 w-4 text-amber-600" />
+                      <Label htmlFor="admin-upgrade" className="text-sm font-medium text-amber-800">
+                        Upgrade naar admin rechten (alleen voor beheerders)
+                      </Label>
+                    </div>
+                  </div>
+                  
+                  {upgradeToAdmin && (
+                    <Button 
+                      onClick={handleAdminUpgrade}
+                      disabled={upgradeLoading}
+                      variant="outline"
+                      className="w-full border-amber-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      {upgradeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Shield className="mr-2 h-4 w-4" />
+                      Account upgraden naar admin
+                    </Button>
+                  )}
+                </div>
+                <Separator />
+              </>
+            )}
             
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium">Lid sinds:</span>
