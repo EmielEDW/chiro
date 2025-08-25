@@ -20,6 +20,13 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [isAdminSignup, setIsAdminSignup] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
+  // Wachtwoord reset state
+  const [showReset, setShowReset] = useState(false);
+  const [isRecovery, setIsRecovery] = useState(false);
+  const [newPassword1, setNewPassword1] = useState('');
+  const [newPassword2, setNewPassword2] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [changeLoading, setChangeLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,6 +36,18 @@ const Auth = () => {
       navigate('/');
     }
   }, [user, navigate]);
+
+  // Luister naar Supabase recovery event om reset-formulier te tonen
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+        setShowReset(false);
+        toast({ title: 'Reset link bevestigd', description: 'Kies een nieuw wachtwoord.' });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [toast]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +153,49 @@ const Auth = () => {
     
     setLoading(false);
   };
+  
+  // Wachtwoord-reset e-mail versturen
+  const handleSendResetEmail = async () => {
+    if (!email) {
+      toast({ title: 'Email vereist', description: 'Vul je email in om een reset link te ontvangen.', variant: 'destructive' });
+      return;
+    }
+    setResetLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth`,
+    });
+    if (error) {
+      toast({ title: 'Kon reset e-mail niet versturen', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'E-mail verstuurd', description: 'Check je inbox voor de reset link.' });
+      setShowReset(false);
+    }
+    setResetLoading(false);
+  };
+
+  // Nieuw wachtwoord instellen na recovery
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword1 !== newPassword2) {
+      toast({ title: 'Wachtwoorden komen niet overeen', description: 'Beide wachtwoorden moeten gelijk zijn.', variant: 'destructive' });
+      return;
+    }
+    if (newPassword1.length < 6) {
+      toast({ title: 'Wachtwoord te kort', description: 'Minimaal 6 karakters.', variant: 'destructive' });
+      return;
+    }
+    setChangeLoading(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword1 });
+    if (error) {
+      toast({ title: 'Fout bij instellen wachtwoord', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Wachtwoord ingesteld', description: 'Je kunt nu inloggen met je nieuwe wachtwoord.' });
+      setIsRecovery(false);
+      setNewPassword1('');
+      setNewPassword2('');
+    }
+    setChangeLoading(false);
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
@@ -152,120 +214,170 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="signin" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Inloggen</TabsTrigger>
-              <TabsTrigger value="signup">Registreren</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="signin">
-              <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="jouw@email.be"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Wachtwoord</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Inloggen
-                </Button>
-              </form>
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <form onSubmit={handleSignUp} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Naam</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Jouw naam"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="jouw@email.be"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Wachtwoord</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                  />
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="admin-signup" 
-                    checked={isAdminSignup}
-                    onCheckedChange={(checked) => {
-                      setIsAdminSignup(checked as boolean);
-                      if (!checked) {
-                        setAdminPassword(''); // Clear admin password when unchecked
-                      }
-                    }}
-                  />
-                  <Label htmlFor="admin-signup" className="text-sm flex items-center gap-1">
-                    <Shield className="h-3 w-3" />
-                    Registreren als admin
-                  </Label>
-                </div>
-                
-                {isAdminSignup && (
+          {isRecovery ? (
+            <form onSubmit={handleUpdatePassword} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="new-pass-1">Nieuw wachtwoord</Label>
+                <Input
+                  id="new-pass-1"
+                  type="password"
+                  value={newPassword1}
+                  onChange={(e) => setNewPassword1(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="new-pass-2">Bevestig nieuw wachtwoord</Label>
+                <Input
+                  id="new-pass-2"
+                  type="password"
+                  value={newPassword2}
+                  onChange={(e) => setNewPassword2(e.target.value)}
+                  placeholder="••••••••"
+                  minLength={6}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={changeLoading}>
+                {changeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Wachtwoord instellen
+              </Button>
+            </form>
+          ) : (
+            <Tabs defaultValue="signin" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Inloggen</TabsTrigger>
+                <TabsTrigger value="signup">Registreren</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="admin-password">Admin wachtwoord</Label>
+                    <Label htmlFor="email">Email</Label>
                     <Input
-                      id="admin-password"
-                      type="password"
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                      placeholder="Voer admin wachtwoord in"
-                      required={isAdminSignup}
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="jouw@email.be"
+                      required
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Contacteer de beheerder voor het admin wachtwoord
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Wachtwoord</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Inloggen
+                  </Button>
+                </form>
+                <div className="mt-2 flex justify-end">
+                  <Button variant="link" type="button" onClick={() => setShowReset((v) => !v)}>
+                    Wachtwoord vergeten?
+                  </Button>
+                </div>
+                {showReset && (
+                  <div className="mt-2 space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      We sturen een link naar je email om je wachtwoord te resetten.
                     </p>
+                    <Button type="button" variant="outline" className="w-full" onClick={handleSendResetEmail} disabled={resetLoading || !email}>
+                      {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Stuur reset e-mail
+                    </Button>
                   </div>
                 )}
-                
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Account aanmaken
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Naam</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Jouw naam"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="jouw@email.be"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Wachtwoord</Label>
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="admin-signup" 
+                      checked={isAdminSignup}
+                      onCheckedChange={(checked) => {
+                        setIsAdminSignup(checked as boolean);
+                        if (!checked) {
+                          setAdminPassword(''); // Clear admin password when unchecked
+                        }
+                      }}
+                    />
+                    <Label htmlFor="admin-signup" className="text-sm flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      Registreren als admin
+                    </Label>
+                  </div>
+                  
+                  {isAdminSignup && (
+                    <div className="space-y-2">
+                      <Label htmlFor="admin-password">Admin wachtwoord</Label>
+                      <Input
+                        id="admin-password"
+                        type="password"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="Voer admin wachtwoord in"
+                        required={isAdminSignup}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Contacteer de beheerder voor het admin wachtwoord
+                      </p>
+                    </div>
+                  )}
+                  
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Account aanmaken
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          )}
+
         </CardContent>
       </Card>
     </div>
