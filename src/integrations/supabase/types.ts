@@ -359,6 +359,36 @@ export type Database = {
           },
         ]
       }
+      transaction_reversals: {
+        Row: {
+          id: string
+          original_transaction_id: string
+          original_transaction_type: string
+          reversal_reason: string
+          reversed_at: string
+          reversed_by: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          original_transaction_id: string
+          original_transaction_type: string
+          reversal_reason: string
+          reversed_at?: string
+          reversed_by: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          original_transaction_id?: string
+          original_transaction_type?: string
+          reversal_reason?: string
+          reversed_at?: string
+          reversed_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           created_at: string

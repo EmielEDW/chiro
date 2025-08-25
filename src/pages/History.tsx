@@ -85,6 +85,18 @@ export default function History() {
       
       if (topUpsError) throw topUpsError;
 
+      // Fetch reversals to check which transactions have been reversed
+      const { data: reversalsData, error: reversalsError } = await supabase
+        .from('transaction_reversals')
+        .select('original_transaction_id, original_transaction_type')
+        .eq('user_id', user.id);
+      
+      if (reversalsError) throw reversalsError;
+
+      const reversedTransactions = new Set(
+        reversalsData.map(r => `${r.original_transaction_type}-${r.original_transaction_id}`)
+      );
+
       // Combine and format data
       const consumptions = consumptionsData.map((item) => ({
         id: item.id,
@@ -93,6 +105,7 @@ export default function History() {
         source: item.source,
         item_name: item.items?.name || 'Onbekend product',
         type: 'consumption' as const,
+        isReversed: reversedTransactions.has(`consumption-${item.id}`),
       }));
 
       const topUps = topUpsData.map((item) => ({
@@ -102,6 +115,7 @@ export default function History() {
         source: item.provider,
         type: 'topup' as const,
         topup_status: item.status,
+        isReversed: reversedTransactions.has(`topup-${item.id}`),
       }));
 
       // Combine and sort by date
@@ -109,15 +123,29 @@ export default function History() {
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      return combined as HistoryItem[];
+      return combined as (HistoryItem & { isReversed: boolean })[];
     },
     enabled: !!user?.id,
   });
 
   // Mutation to reverse a transaction
   const reverseTransaction = useMutation({
-    mutationFn: async (item: HistoryItem) => {
+    mutationFn: async (item: HistoryItem & { isReversed: boolean }) => {
       if (!user?.id) throw new Error('User not authenticated');
+      if (item.isReversed) throw new Error('Transaction already reversed');
+
+      // First, record the reversal
+      const { error: reversalError } = await supabase
+        .from('transaction_reversals')
+        .insert({
+          user_id: user.id,
+          original_transaction_id: item.id,
+          original_transaction_type: item.type,
+          reversal_reason: `Foutje teruggedraaid: ${item.type === 'consumption' ? item.item_name : 'opwaardering'}`,
+          reversed_by: user.id
+        });
+
+      if (reversalError) throw reversalError;
 
       if (item.type === 'consumption') {
         // Create a reversal adjustment (positive amount to refund)
@@ -413,43 +441,49 @@ export default function History() {
                     </TableCell>
                     <TableCell>{getSourceBadge(item.source, item.type)}</TableCell>
                     <TableCell>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-orange-600 hover:text-orange-700"
-                          >
-                            <Undo2 className="h-4 w-4 mr-1" />
-                            Foutje
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Weet je zeker dat je deze transactie wilt terugdraaien?
-                              <br />
-                              <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
-                              <br />
-                              <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
-                              {item.type === 'consumption' && (
-                                <><br /><strong>Note:</strong> De voorraad wordt ook teruggeteld.</>
-                              )}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => reverseTransaction.mutate(item)}
-                              disabled={reverseTransaction.isPending}
-                              className="bg-orange-600 hover:bg-orange-700"
+                      {item.isReversed ? (
+                        <Badge variant="secondary" className="text-xs">
+                          Terugbetaald
+                        </Badge>
+                      ) : (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-orange-600 hover:text-orange-700"
                             >
-                              {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              <Undo2 className="h-4 w-4 mr-1" />
+                              Foutje
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Weet je zeker dat je deze transactie wilt terugdraaien?
+                                <br />
+                                <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                                <br />
+                                <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
+                                {item.type === 'consumption' && (
+                                  <><br /><strong>Let op:</strong> De voorraad wordt ook teruggeteld.</>
+                                )}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => reverseTransaction.mutate(item)}
+                                disabled={reverseTransaction.isPending}
+                                className="bg-orange-600 hover:bg-orange-700"
+                              >
+                                {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

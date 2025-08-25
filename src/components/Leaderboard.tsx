@@ -10,6 +10,7 @@ import { Trophy, Medal, Award } from 'lucide-react';
 interface LeaderboardEntry {
   user_id: string;
   user_name: string;
+  avatar_url?: string;
   total_spent: number;
   rank: number;
 }
@@ -52,7 +53,8 @@ const Leaderboard = () => {
           user_id,
           price_cents,
           profiles!consumptions_user_id_fkey (
-            name
+            name,
+            avatar_url
           )
         `)
         .gte('created_at', startDate)
@@ -64,18 +66,20 @@ const Leaderboard = () => {
       const userSpending = data.reduce((acc, consumption) => {
         const userId = consumption.user_id;
         const userName = consumption.profiles?.name || 'Onbekend';
+        const avatarUrl = consumption.profiles?.avatar_url;
         
         if (!acc[userId]) {
           acc[userId] = {
             user_id: userId,
             user_name: userName,
+            avatar_url: avatarUrl,
             total_spent: 0,
           };
         }
         
         acc[userId].total_spent += consumption.price_cents;
         return acc;
-      }, {} as Record<string, { user_id: string; user_name: string; total_spent: number; }>);
+      }, {} as Record<string, { user_id: string; user_name: string; avatar_url?: string; total_spent: number; }>);
       
       // Convert to array and sort by spending (descending)
       const leaderboard = Object.values(userSpending)
@@ -182,6 +186,13 @@ const Leaderboard = () => {
                       </div>
                       
                       <Avatar className="h-10 w-10">
+                        {entry.avatar_url && (
+                          <img 
+                            src={entry.avatar_url} 
+                            alt={entry.user_name}
+                            className="h-full w-full object-cover rounded-full"
+                          />
+                        )}
                         <AvatarFallback>
                           {entry.user_name.charAt(0).toUpperCase()}
                         </AvatarFallback>
