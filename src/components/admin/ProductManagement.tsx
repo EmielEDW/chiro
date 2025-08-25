@@ -157,14 +157,14 @@ const ProductManagement = () => {
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('items')
-        .update({ active: false })
+        .delete()
         .eq('id', id);
       
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      toast({ title: 'Product verwijderd', description: 'Het product is gedeactiveerd.' });
+      toast({ title: 'Product verwijderd', description: 'Het product is permanent verwijderd.' });
     },
     onError: (error: any) => {
       toast({
@@ -441,7 +441,6 @@ const ProductManagement = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => deleteItem.mutate(item.id)}
-                          disabled={!item.active}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
