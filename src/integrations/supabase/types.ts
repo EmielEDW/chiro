@@ -185,34 +185,46 @@ export type Database = {
       items: {
         Row: {
           active: boolean
+          category: Database["public"]["Enums"]["drink_category"] | null
           created_at: string
+          description: string | null
           event_id: string | null
           id: string
+          image_url: string | null
           is_default: boolean
           name: string
           price_cents: number
+          stock_alert_threshold: number | null
           stock_quantity: number | null
           updated_at: string
         }
         Insert: {
           active?: boolean
+          category?: Database["public"]["Enums"]["drink_category"] | null
           created_at?: string
+          description?: string | null
           event_id?: string | null
           id?: string
+          image_url?: string | null
           is_default?: boolean
           name: string
           price_cents: number
+          stock_alert_threshold?: number | null
           stock_quantity?: number | null
           updated_at?: string
         }
         Update: {
           active?: boolean
+          category?: Database["public"]["Enums"]["drink_category"] | null
           created_at?: string
+          description?: string | null
           event_id?: string | null
           id?: string
+          image_url?: string | null
           is_default?: boolean
           name?: string
           price_cents?: number
+          stock_alert_threshold?: number | null
           stock_quantity?: number | null
           updated_at?: string
         }
@@ -265,6 +277,44 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_transactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          notes: string | null
+          quantity_change: number
+          transaction_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          notes?: string | null
+          quantity_change: number
+          transaction_type: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          notes?: string | null
+          quantity_change?: number
+          transaction_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_transactions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       top_ups: {
         Row: {
           amount_cents: number
@@ -306,6 +356,35 @@ export type Database = {
           },
         ]
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -322,6 +401,7 @@ export type Database = {
     }
     Enums: {
       consumption_source: "tap" | "qr" | "admin"
+      drink_category: "frisdrank_pils_chips" | "energy_kriek" | "mixed_drink"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -452,6 +532,7 @@ export const Constants = {
   public: {
     Enums: {
       consumption_source: ["tap", "qr", "admin"],
+      drink_category: ["frisdrank_pils_chips", "energy_kriek", "mixed_drink"],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],
     },
