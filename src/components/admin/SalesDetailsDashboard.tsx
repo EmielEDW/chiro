@@ -28,7 +28,7 @@ interface SaleDetail {
   topup_status?: string;
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 50;
 
 const SalesDetailsDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
