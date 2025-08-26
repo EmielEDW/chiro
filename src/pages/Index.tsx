@@ -9,14 +9,16 @@ import TopUpDialog from '@/components/TopUpDialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, Settings, Eye } from 'lucide-react';
+import { LogOut, History, Settings, Eye, TrendingUp, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const { user } = useAuth();
   const { profile, balance, isLoading, refreshBalance } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -136,17 +138,19 @@ const Index = () => {
           </div>
         </TopUpDialog>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 gap-4">
-          <Button 
-            variant="outline" 
-            className="h-16 flex-col space-y-1"
-            onClick={() => navigate('/history')}
-          >
-            <History className="h-5 w-5" />
-            <span className="text-sm">Geschiedenis</span>
-          </Button>
-        </div>
+        {/* Quick Actions - Only show on desktop */}
+        {!isMobile && (
+          <div className="grid grid-cols-1 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-16 flex-col space-y-1"
+              onClick={() => navigate('/history')}
+            >
+              <History className="h-5 w-5" />
+              <span className="text-sm">Geschiedenis</span>
+            </Button>
+          </div>
+        )}
 
         {/* Drinks Grid */}
         <DrinkGrid 
@@ -160,6 +164,52 @@ const Index = () => {
         {/* Leaderboard */}
         <Leaderboard />
       </main>
+      
+      {/* Mobile Bottom Navigation */}
+      {isMobile && (
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+          <div className="grid grid-cols-3 gap-1 p-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-col h-16 space-y-1"
+              onClick={() => navigate('/history')}
+            >
+              <History className="h-5 w-5" />
+              <span className="text-xs">Geschiedenis</span>
+            </Button>
+            
+            <TopUpDialog>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-col h-16 space-y-1"
+              >
+                <CreditCard className="h-5 w-5" />
+                <span className="text-xs">Opladen</span>
+              </Button>
+            </TopUpDialog>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-col h-16 space-y-1"
+              onClick={() => {
+                const leaderboardElement = document.querySelector('[data-testid="leaderboard"]');
+                if (leaderboardElement) {
+                  leaderboardElement.scrollIntoView({ behavior: 'smooth' });
+                }
+              }}
+            >
+              <TrendingUp className="h-5 w-5" />
+              <span className="text-xs">Leaderboard</span>
+            </Button>
+          </div>
+        </div>
+      )}
+      
+      {/* Add bottom padding on mobile to prevent content from being hidden behind the bottom bar */}
+      {isMobile && <div className="h-20"></div>}
     </div>
   );
 };

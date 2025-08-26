@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { signOut } from '@/lib/auth';
+import { useNavigate } from 'react-router-dom';
 
 export interface Profile {
   id: string;
@@ -17,8 +19,9 @@ export interface Profile {
 export const useProfile = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -29,10 +32,28 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single();
       
+      // If profile doesn't exist or is inactive, sign out
+      if (error && error.code === 'PGRST116') {
+        console.log('Profile not found, signing out');
+        await signOut();
+        navigate('/auth');
+        return null;
+      }
+      
       if (error) throw error;
+      
+      // If profile is inactive, sign out
+      if (data && !data.active) {
+        console.log('Profile is inactive, signing out');
+        await signOut();
+        navigate('/auth');
+        return null;
+      }
+      
       return data as Profile;
     },
     enabled: !!user?.id,
+    retry: false,
   });
 
   const { data: balance } = useQuery({

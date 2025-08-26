@@ -153,7 +153,7 @@ const Leaderboard = () => {
   }
 
   return (
-    <Card>
+    <Card data-testid="leaderboard">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           🏆 Leaderboard

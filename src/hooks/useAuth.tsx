@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { signOut } from '@/lib/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -53,8 +54,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (mounted) {
+          // Handle token refresh errors by signing out
+          if (event === 'TOKEN_REFRESHED' && !session) {
+            console.log('Token refresh failed, signing out');
+            await signOut();
+            return;
+          }
+          
           setSession(session);
           setUser(session?.user ?? null);
           setLoading(false);
