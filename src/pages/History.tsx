@@ -409,37 +409,45 @@ export default function History() {
         </CardHeader>
         
         <CardContent>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Datum & Tijd</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Details</TableHead>
-                  <TableHead>Bedrag</TableHead>
-                  <TableHead>Bron</TableHead>
-                  <TableHead>Acties</TableHead>
+                  <TableHead className="min-w-[140px]">Datum & Tijd</TableHead>
+                  <TableHead className="min-w-[120px]">Details</TableHead>
+                  <TableHead className="min-w-[80px] text-right">Bedrag</TableHead>
+                  <TableHead className="min-w-[80px]">Acties</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedItems.map((item) => (
                   <TableRow key={`${item.type}-${item.id}`}>
                     <TableCell className="font-mono text-sm">
-                      {formatDate(item.created_at)}
+                      <div className="whitespace-nowrap">
+                        {formatDate(item.created_at)}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {getTypeBadge(item.type, item.topup_status)}
-                    </TableCell>
-                    <TableCell>
-                      {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                      <div className="space-y-1">
+                        <div className="font-medium">
+                          {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                        </div>
+                        {item.type === 'consumption' && (
+                          <Badge variant="outline" className="text-xs">Aankoop</Badge>
+                        )}
+                        {item.type === 'topup' && (
+                          <Badge variant="default" className="text-xs">Opwaardering</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className={cn(
-                      "font-medium",
+                      "font-medium text-right",
                       item.price_cents > 0 ? "text-green-600" : "text-red-600"
                     )}>
-                      {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
+                      <div className="whitespace-nowrap">
+                        {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
+                      </div>
                     </TableCell>
-                    <TableCell>{getSourceBadge(item.source, item.type)}</TableCell>
                     <TableCell>
                       {item.isReversed ? (
                         <Badge variant="secondary" className="text-xs">
