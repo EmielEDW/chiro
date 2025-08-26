@@ -409,104 +409,184 @@ export default function History() {
         </CardHeader>
         
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[140px]">Datum & Tijd</TableHead>
-                  <TableHead className="min-w-[120px]">Details</TableHead>
-                  <TableHead className="min-w-[80px] text-right">Bedrag</TableHead>
-                  <TableHead className="min-w-[80px]">Acties</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedItems.map((item) => (
-                  <TableRow key={`${item.type}-${item.id}`}>
-                    <TableCell className="font-mono text-sm">
-                      <div className="whitespace-nowrap">
-                        {formatDate(item.created_at)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">
-                          {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
-                        </div>
-                        {item.type === 'consumption' && (
-                          <Badge variant="outline" className="text-xs">Aankoop</Badge>
-                        )}
-                        {item.type === 'topup' && (
-                          <Badge variant="default" className="text-xs">Opwaardering</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className={cn(
-                      "font-medium text-right",
+          {/* Mobile list (no horizontal scroll) */}
+          <div className="block sm:hidden space-y-3">
+            {paginatedItems.map((item) => (
+              <div key={`${item.type}-${item.id}`} className="border rounded-lg p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">
+                      {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {formatDate(item.created_at)}
+                    </div>
+                  </div>
+                  <div
+                    className={cn(
+                      "shrink-0 font-semibold",
                       item.price_cents > 0 ? "text-green-600" : "text-red-600"
-                    )}>
-                      <div className="whitespace-nowrap">
-                        {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {item.isReversed ? (
-                        <Badge variant="secondary" className="text-xs">
-                          Terugbetaald
-                        </Badge>
-                       ) : item.type === 'consumption' ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-orange-600 hover:text-orange-700"
-                            >
-                              <Undo2 className="h-4 w-4 mr-1" />
-                              Foutje
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Weet je zeker dat je deze transactie wilt terugdraaien?
-                                <br />
-                                <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
-                                <br />
-                                <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
-                                {item.type === 'consumption' && (
-                                  <><br /><strong>Let op:</strong> De voorraad wordt ook teruggeteld.</>
-                                )}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => reverseTransaction.mutate(item)}
-                                disabled={reverseTransaction.isPending}
-                                className="bg-orange-600 hover:bg-orange-700"
-                              >
-                                {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : null}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            
+                    )}
+                  >
+                    {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
+                  </div>
+                </div>
+                <div className="mt-2">
+                  {item.isReversed ? (
+                    <Badge variant="secondary" className="text-xs">Terugbetaald</Badge>
+                  ) : item.type === 'consumption' ? (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-orange-600 hover:text-orange-700 px-0"
+                        >
+                          <Undo2 className="h-4 w-4 mr-1" />
+                          Foutje
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Weet je zeker dat je deze transactie wilt terugdraaien?
+                            <br />
+                            <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                            <br />
+                            <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
+                            {item.type === 'consumption' && (
+                              <><br /><strong>Let op:</strong> De voorraad wordt ook teruggeteld.</>
+                            )}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => reverseTransaction.mutate(item)}
+                            disabled={reverseTransaction.isPending}
+                            className="bg-orange-600 hover:bg-orange-700"
+                          >
+                            {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+
             {filteredItems.length === 0 && (
               <div className="text-center py-8 text-muted-foreground">
-                {searchTerm || dateFrom || dateTo ? 
-                  'Geen transacties gevonden voor de geselecteerde criteria.' :
-                  'Nog geen transacties gevonden.'
+                {searchTerm || dateFrom || dateTo ?
+                  "Geen transacties gevonden voor de geselecteerde criteria." :
+                  "Nog geen transacties gevonden."
                 }
               </div>
             )}
           </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Datum & Tijd</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Bedrag</TableHead>
+                    <TableHead>Acties</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedItems.map((item) => (
+                    <TableRow key={`${item.type}-${item.id}`}>
+                      <TableCell className="font-mono text-sm">
+                        {formatDate(item.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                          </div>
+                          {item.type === 'consumption' && (
+                            <Badge variant="outline" className="text-xs">Aankoop</Badge>
+                          )}
+                          {item.type === 'topup' && (
+                            <Badge variant="default" className="text-xs">Opwaardering</Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          "font-medium text-right",
+                          item.price_cents > 0 ? "text-green-600" : "text-red-600"
+                        )}
+                      >
+                        {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
+                      </TableCell>
+                      <TableCell>
+                        {item.isReversed ? (
+                          <Badge variant="secondary" className="text-xs">
+                            Terugbetaald
+                          </Badge>
+                         ) : item.type === 'consumption' ? (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-orange-600 hover:text-orange-700"
+                              >
+                                <Undo2 className="h-4 w-4 mr-1" />
+                                Foutje
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Weet je zeker dat je deze transactie wilt terugdraaien?
+                                  <br />
+                                  <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+                                  <br />
+                                  <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
+                                  {item.type === 'consumption' && (
+                                    <><br /><strong>Let op:</strong> De voorraad wordt ook teruggeteld.</>
+                                  )}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => reverseTransaction.mutate(item)}
+                                  disabled={reverseTransaction.isPending}
+                                  className="bg-orange-600 hover:bg-orange-700"
+                                >
+                                  {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        ) : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {filteredItems.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  {searchTerm || dateFrom || dateTo ?
+                    "Geen transacties gevonden voor de geselecteerde criteria." :
+                    "Nog geen transacties gevonden."
+                  }
+                </div>
+              )}
+            </div>
+          </div>
+
           
           {/* Pagination */}
           {totalPages > 1 && (
