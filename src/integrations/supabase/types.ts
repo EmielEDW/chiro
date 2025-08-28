@@ -295,6 +295,7 @@ export type Database = {
           name: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          username: string | null
         }
         Insert: {
           active?: boolean
@@ -307,6 +308,7 @@ export type Database = {
           name: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          username?: string | null
         }
         Update: {
           active?: boolean
@@ -319,6 +321,7 @@ export type Database = {
           name?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }

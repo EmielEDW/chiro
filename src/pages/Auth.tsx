@@ -17,6 +17,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [chiroRole, setChiroRole] = useState('');
   const [loading, setLoading] = useState(false);
   // Wachtwoord reset state
@@ -52,13 +53,37 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await signIn(email, password);
+    // First try to find user by email or username
+    let loginEmail = email;
+    
+    // If it doesn't contain @, assume it's a username and find the email
+    if (!email.includes('@')) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('username', email.toLowerCase())
+        .maybeSingle();
+      
+      if (profileError || !profile) {
+        toast({
+          title: "Gebruiker niet gevonden",
+          description: "Geen account gevonden met deze gebruikersnaam",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+      
+      loginEmail = profile.email;
+    }
+
+    const { error } = await signIn(loginEmail, password);
     
     if (error) {
       toast({
         title: "Inloggen mislukt",
         description: error.message === "Invalid login credentials" 
-          ? "Onjuiste email of wachtwoord" 
+          ? "Onjuiste email/gebruikersnaam of wachtwoord" 
           : error.message,
         variant: "destructive",
       });
@@ -103,6 +128,35 @@ const Auth = () => {
       return;
     }
 
+    // Check if username already exists
+    if (username) {
+      const { data: existingUsername, error: usernameError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('username', username.toLowerCase())
+        .maybeSingle();
+
+      if (usernameError) {
+        toast({
+          title: "Fout bij verificatie",
+          description: "Er ging iets mis bij het controleren van de gebruikersnaam.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (existingUsername) {
+        toast({
+          title: "Gebruikersnaam al in gebruik",
+          description: "Deze gebruikersnaam is al bezet. Kies een andere gebruikersnaam.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+    }
+
     const { data, error } = await signUp(email, password, name);
     
     if (error) {
@@ -120,6 +174,10 @@ const Auth = () => {
         
         if (chiroRole) {
           updates.chiro_role = chiroRole;
+        }
+        
+        if (username) {
+          updates.username = username.toLowerCase();
         }
         
         if (Object.keys(updates).length > 0) {
@@ -143,6 +201,7 @@ const Auth = () => {
       setEmail('');
       setPassword('');
       setName('');
+      setUsername('');
       setChiroRole('');
     }
     
@@ -250,13 +309,13 @@ const Auth = () => {
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">Email of Gebruikersnaam</Label>
                     <Input
                       id="email"
-                      type="email"
+                      type="text"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="jouw@email.be"
+                      placeholder="jouw@email.be of gebruikersnaam"
                       required
                     />
                   </div>
@@ -303,9 +362,23 @@ const Auth = () => {
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Jouw naam"
+                      placeholder="Jouw volledige naam"
                       required
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="username">Gebruikersnaam</Label>
+                    <Input
+                      id="username"
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                      placeholder="gebruikersnaam (optioneel)"
+                      maxLength={20}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Alleen letters, cijfers en _ toegestaan. Laat leeg voor alleen email login.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>

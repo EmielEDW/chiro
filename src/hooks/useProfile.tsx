@@ -10,6 +10,7 @@ export interface Profile {
   email: string;
   role: 'user' | 'treasurer' | 'admin';
   chiro_role?: string;
+  username?: string;
   avatar_url?: string;
   active: boolean;
   allow_credit: boolean;
