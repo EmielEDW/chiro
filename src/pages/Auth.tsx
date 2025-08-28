@@ -20,6 +20,7 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [chiroRole, setChiroRole] = useState('');
   const [isAdminRegistration, setIsAdminRegistration] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
   // Wachtwoord reset state
   const [showReset, setShowReset] = useState(false);
@@ -105,6 +106,18 @@ const Auth = () => {
       return;
     }
 
+    // Check admin password if admin registration is selected
+    if (isAdminRegistration) {
+      if (adminPassword !== 'ChiroAdmin2024!') {
+        toast({
+          title: "Onjuist admin wachtwoord",
+          description: "Het admin wachtwoord is niet correct.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+    }
 
     const { data, error } = await signUp(email, password, name);
     
@@ -152,6 +165,7 @@ const Auth = () => {
       setName('');
       setChiroRole('');
       setIsAdminRegistration(false);
+      setAdminPassword('');
     }
     
     setLoading(false);
@@ -365,6 +379,20 @@ const Auth = () => {
                        </Label>
                      </div>
                    </div>
+                   
+                   {isAdminRegistration && (
+                     <div className="space-y-2">
+                       <Label htmlFor="admin-password">Admin Wachtwoord</Label>
+                       <Input
+                         id="admin-password"
+                         type="password"
+                         value={adminPassword}
+                         onChange={(e) => setAdminPassword(e.target.value)}
+                         placeholder="••••••••"
+                         required
+                       />
+                     </div>
+                   )}
                    
                    <Button type="submit" className="w-full" disabled={loading}>
                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
