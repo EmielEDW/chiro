@@ -8,9 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,8 +18,6 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [chiroRole, setChiroRole] = useState('');
-  const [isAdminRegistration, setIsAdminRegistration] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
   const [loading, setLoading] = useState(false);
   // Wachtwoord reset state
   const [showReset, setShowReset] = useState(false);
@@ -106,19 +103,6 @@ const Auth = () => {
       return;
     }
 
-    // Check admin password if admin registration is selected
-    if (isAdminRegistration) {
-      if (adminPassword !== 'ChiroAdmin2024!') {
-        toast({
-          title: "Onjuist admin wachtwoord",
-          description: "Het admin wachtwoord is niet correct.",
-          variant: "destructive",
-        });
-        setLoading(false);
-        return;
-      }
-    }
-
     const { data, error } = await signUp(email, password, name);
     
     if (error) {
@@ -136,10 +120,6 @@ const Auth = () => {
         
         if (chiroRole) {
           updates.chiro_role = chiroRole;
-        }
-        
-        if (isAdminRegistration) {
-          updates.role = 'admin';
         }
         
         if (Object.keys(updates).length > 0) {
@@ -164,8 +144,6 @@ const Auth = () => {
       setPassword('');
       setName('');
       setChiroRole('');
-      setIsAdminRegistration(false);
-      setAdminPassword('');
     }
     
     setLoading(false);
@@ -365,34 +343,6 @@ const Auth = () => {
                        </SelectContent>
                      </Select>
                    </div>
-                   
-                   <div className="flex items-center space-x-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                     <Checkbox 
-                       id="admin-registration" 
-                       checked={isAdminRegistration}
-                       onCheckedChange={(checked) => setIsAdminRegistration(checked === true)}
-                     />
-                     <div className="flex items-center space-x-2">
-                       <Shield className="h-4 w-4 text-amber-600" />
-                       <Label htmlFor="admin-registration" className="text-sm font-medium text-amber-800">
-                         Registreer als admin (alleen voor beheerders)
-                       </Label>
-                     </div>
-                   </div>
-                   
-                   {isAdminRegistration && (
-                     <div className="space-y-2">
-                       <Label htmlFor="admin-password">Admin Wachtwoord</Label>
-                       <Input
-                         id="admin-password"
-                         type="password"
-                         value={adminPassword}
-                         onChange={(e) => setAdminPassword(e.target.value)}
-                         placeholder="••••••••"
-                         required
-                       />
-                     </div>
-                   )}
                    
                    <Button type="submit" className="w-full" disabled={loading}>
                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
