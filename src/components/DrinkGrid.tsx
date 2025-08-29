@@ -270,7 +270,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     <div className="space-y-6">
       {/* Favorites section at the top */}
       {favoriteItems.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-4" data-category="favorites">
           <div className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary fill-primary" />
             <h3 className="text-lg font-semibold text-primary">Favorieten</h3>
@@ -375,7 +375,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
 
       {/* Regular categories */}
       {sortedCategories.map((category) => (
-        <div key={category} className="space-y-4">
+        <div key={category} className="space-y-4" data-category={category}>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">{getCategoryName(category)}</h3>
             <Badge 

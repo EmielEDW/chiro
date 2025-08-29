@@ -5,12 +5,14 @@ import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
 import Leaderboard from '@/components/Leaderboard';
 import TopUpDialog from '@/components/TopUpDialog';
+import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, Settings, Eye, TrendingUp, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useState } from 'react';
 
 const Index = () => {
   const { user } = useAuth();
@@ -18,6 +20,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -53,7 +56,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-10">
+      <header className="bg-card border-b sticky top-0 z-50 transition-opacity duration-300" id="main-header">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -150,6 +153,12 @@ const Index = () => {
             </Button>
           </div>
         )}
+
+        {/* Mobile Category Filter */}
+        <MobileCategoryFilter 
+          onCategorySelect={setSelectedCategory}
+          selectedCategory={selectedCategory}
+        />
 
         {/* Drinks Grid */}
         <DrinkGrid 
