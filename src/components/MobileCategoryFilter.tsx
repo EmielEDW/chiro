@@ -95,10 +95,11 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
       id="category-filter-bar"
       className={`
         transition-all duration-300 ease-in-out bg-card border-b border-border
-        ${isSticky ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}
+        ${isSticky ? 'fixed top-0 left-0 right-0 z-50 shadow-md' : 'relative'}
       `}
+      style={isSticky ? { marginTop: 0, paddingTop: 0 } : {}}
     >
-      <div className="container mx-auto px-4 py-3">
+      <div className={`container mx-auto px-4 ${isSticky ? 'py-3' : 'py-3'}`}>
         <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide pb-1">
           <Button
             variant={!selectedCategory ? "default" : "outline"}
