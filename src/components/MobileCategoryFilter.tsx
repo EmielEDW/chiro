@@ -27,6 +27,8 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
   useEffect(() => {
     if (!isMobile) return;
 
+    let lastScrollY = window.scrollY;
+    
     const handleScroll = () => {
       const scrollY = window.scrollY;
       const filterBarElement = document.getElementById('category-filter-bar');
@@ -36,29 +38,46 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
         const filterBarTop = filterBarElement.offsetTop;
         const headerHeight = mainHeader.offsetHeight;
         
+        // If we've scrolled to the top, always show the nav bar
+        if (scrollY <= 50) {
+          setIsSticky(false);
+          mainHeader.style.opacity = '1';
+          mainHeader.style.transform = 'translateY(0)';
+        }
         // Make filter bar sticky and hide main header when they would overlap
-        if (scrollY >= filterBarTop - headerHeight) {
+        else if (scrollY >= filterBarTop - headerHeight) {
           setIsSticky(true);
           mainHeader.style.opacity = '0';
           mainHeader.style.transform = 'translateY(-100%)';
-        } else {
+        } 
+        // When scrolling back up and not at the top, restore the filter bar to normal position
+        else if (scrollY < lastScrollY && scrollY < filterBarTop - headerHeight) {
           setIsSticky(false);
           mainHeader.style.opacity = '1';
           mainHeader.style.transform = 'translateY(0)';
         }
       }
+      
+      lastScrollY = scrollY;
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      // Cleanup: restore nav bar when component unmounts
+      const mainHeader = document.getElementById('main-header');
+      if (mainHeader) {
+        mainHeader.style.opacity = '1';
+        mainHeader.style.transform = 'translateY(0)';
+      }
+    };
   }, [isMobile]);
 
   const scrollToCategory = (categoryKey: string) => {
     const categoryElement = document.querySelector(`[data-category="${categoryKey}"]`);
     if (categoryElement) {
-      const headerHeight = 64;
-      const filterBarHeight = 60;
-      const offsetTop = categoryElement.getBoundingClientRect().top + window.scrollY - headerHeight - filterBarHeight - 10;
+      const stickyOffset = isSticky ? 60 : 124; // Account for sticky filter bar or normal header + filter
+      const offsetTop = categoryElement.getBoundingClientRect().top + window.scrollY - stickyOffset;
       
       window.scrollTo({
         top: offsetTop,
@@ -75,24 +94,23 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
     <div 
       id="category-filter-bar"
       className={`
-        transition-all duration-300 ease-in-out
-        ${isSticky ? 'fixed top-0 left-0 right-0 z-40' : 'relative'}
-        bg-card border-b border-border
+        transition-all duration-300 ease-in-out bg-card border-b border-border
+        ${isSticky ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}
       `}
     >
-      <div className="container mx-auto px-4 py-2">
-        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center space-x-2 overflow-x-auto scrollbar-hide pb-1">
           <Button
             variant={!selectedCategory ? "default" : "outline"}
             size="sm"
             onClick={() => {
               onCategorySelect('');
               window.scrollTo({
-                top: document.querySelector('[data-category]')?.getBoundingClientRect().top! + window.scrollY - 120,
+                top: document.querySelector('[data-category]')?.getBoundingClientRect().top! + window.scrollY - (isSticky ? 60 : 124),
                 behavior: 'smooth'
               });
             }}
-            className="whitespace-nowrap flex-shrink-0 text-xs h-8"
+            className="whitespace-nowrap flex-shrink-0 text-xs h-8 min-w-fit"
           >
             Alles
           </Button>
@@ -102,7 +120,7 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
               key={category.key}
               variant={selectedCategory === category.key ? "default" : "outline"}
               className={`
-                cursor-pointer whitespace-nowrap flex-shrink-0 text-xs h-8 px-3
+                cursor-pointer whitespace-nowrap flex-shrink-0 text-xs h-8 px-3 min-w-fit
                 transition-colors duration-200 hover:opacity-80
                 ${selectedCategory === category.key ? '' : category.color}
               `}
