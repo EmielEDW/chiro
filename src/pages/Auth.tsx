@@ -39,8 +39,20 @@ const Auth = () => {
 
   // Luister naar Supabase recovery event om reset-formulier te tonen
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+    // Check if we're coming from a password recovery link
+    const checkRecovery = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && window.location.hash.includes('type=recovery')) {
+        setIsRecovery(true);
+        setShowReset(false);
+        toast({ title: 'Reset link bevestigd', description: 'Kies een nieuw wachtwoord.' });
+      }
+    };
+    
+    checkRecovery();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'TOKEN_REFRESHED' && session && window.location.hash.includes('type=recovery'))) {
         setIsRecovery(true);
         setShowReset(false);
         toast({ title: 'Reset link bevestigd', description: 'Kies een nieuw wachtwoord.' });
