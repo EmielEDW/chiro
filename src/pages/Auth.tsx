@@ -265,23 +265,23 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md hover-lift smooth-transition animate-scale-in">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center justify-center mb-4 animate-fade-in">
             <img 
               src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
               alt="Chiro Logo" 
-              className="h-16 w-16"
+              className="h-16 w-16 hover-scale"
             />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">Chiro Drinks</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-bold text-primary animate-fade-in">Chiro Drinks</CardTitle>
+          <CardDescription className="animate-fade-in">
             Beheer je dranken saldo digitaal
           </CardDescription>
         </CardHeader>
         <CardContent>
           {isRecovery ? (
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <form onSubmit={handleUpdatePassword} className="space-y-4 animate-fade-in">
               <div className="space-y-2">
                 <Label htmlFor="new-pass-1">Nieuw wachtwoord</Label>
                 <Input
@@ -306,20 +306,20 @@ const Auth = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={changeLoading}>
+              <Button type="submit" className="w-full hover-lift" disabled={changeLoading}>
                 {changeLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Wachtwoord instellen
               </Button>
             </form>
           ) : (
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Inloggen</TabsTrigger>
-                <TabsTrigger value="signup">Registreren</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 animate-slide-in-down">
+                <TabsTrigger value="signin" className="smooth-transition">Inloggen</TabsTrigger>
+                <TabsTrigger value="signup" className="smooth-transition">Registreren</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin">
-                <form onSubmit={handleSignIn} className="space-y-4">
+                <form onSubmit={handleSignIn} className="space-y-4 animate-fade-in">
                   <div className="space-y-2">
                     <Label htmlFor="email">Email of Gebruikersnaam</Label>
                     <Input
@@ -342,7 +342,7 @@ const Auth = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" className="w-full" disabled={loading}>
+                  <Button type="submit" className="w-full hover-lift" disabled={loading}>
                     {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Inloggen
                   </Button>
@@ -353,11 +353,11 @@ const Auth = () => {
                   </Button>
                 </div>
                 {showReset && (
-                  <div className="mt-2 space-y-2">
+                  <div className="mt-2 space-y-2 animate-slide-in-down">
                     <p className="text-sm text-muted-foreground">
                       We sturen een link naar je email om je wachtwoord te resetten.
                     </p>
-                    <Button type="button" variant="outline" className="w-full" onClick={handleSendResetEmail} disabled={resetLoading || !email}>
+                    <Button type="button" variant="outline" className="w-full hover-lift" onClick={handleSendResetEmail} disabled={resetLoading || !email}>
                       {resetLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Stuur reset e-mail
                     </Button>
@@ -366,7 +366,7 @@ const Auth = () => {
               </TabsContent>
               
               <TabsContent value="signup">
-                <form onSubmit={handleSignUp} className="space-y-4">
+                <form onSubmit={handleSignUp} className="space-y-4 animate-fade-in">
                   <div className="space-y-2">
                     <Label htmlFor="name">Naam</Label>
                     <Input
@@ -418,7 +418,7 @@ const Auth = () => {
                    <div className="space-y-2">
                      <Label htmlFor="chiro-role">Chiro Rol</Label>
                      <Select value={chiroRole} onValueChange={setChiroRole}>
-                       <SelectTrigger>
+                       <SelectTrigger className="smooth-transition">
                          <SelectValue placeholder="Kies je rol (optioneel)" />
                        </SelectTrigger>
                        <SelectContent>
@@ -429,7 +429,7 @@ const Auth = () => {
                      </Select>
                    </div>
                    
-                   <Button type="submit" className="w-full" disabled={loading}>
+                   <Button type="submit" className="w-full hover-lift" disabled={loading}>
                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                      Account aanmaken
                    </Button>

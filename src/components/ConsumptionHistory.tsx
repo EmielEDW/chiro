@@ -85,15 +85,16 @@ const ConsumptionHistory = () => {
   }
 
   return (
-    <Card>
+    <Card className="hover-lift smooth-transition">
       <CardHeader>
-        <CardTitle className="text-lg">Recente Activiteit</CardTitle>
+        <CardTitle className="text-lg animate-fade-in">Recente Activiteit</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {consumptions.map((consumption) => (
+        {consumptions.map((consumption, index) => (
           <div
             key={consumption.id}
-            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 smooth-transition hover-lift animate-slide-in-up"
+            style={{ animationDelay: `${index * 100}ms` }}
           >
             <div>
               <p className="font-medium text-sm">{consumption.items.name}</p>
@@ -104,7 +105,7 @@ const ConsumptionHistory = () => {
                 })}
               </p>
             </div>
-            <Badge variant="outline" className="text-destructive">
+            <Badge variant="outline" className="text-destructive hover-scale">
               -{formatCurrency(consumption.price_cents)}
             </Badge>
           </div>
