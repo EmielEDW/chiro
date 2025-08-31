@@ -153,15 +153,15 @@ const Leaderboard = () => {
   }
 
   return (
-    <Card data-testid="leaderboard" className="hover-lift smooth-transition">
+    <Card data-testid="leaderboard">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 animate-fade-in">
+        <CardTitle className="flex items-center gap-2">
           🏆 Leaderboard
-          <Badge variant="outline" className="ml-auto hover-scale">
+          <Badge variant="outline" className="ml-auto">
             {leaderboardData.length} deelnemers
           </Badge>
         </CardTitle>
-        <p className="text-sm text-muted-foreground animate-fade-in">
+        <p className="text-sm text-muted-foreground">
           Zie wie het meest heeft uitgegeven aan drankjes!
         </p>
       </CardHeader>
@@ -188,7 +188,7 @@ const Leaderboard = () => {
                 leaderboardData.map((entry) => (
                   <div
                     key={entry.user_id}
-                    className={`flex items-center justify-between p-4 rounded-lg border smooth-transition hover-lift ${
+                    className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
                       entry.rank <= 3
                         ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-200'
                         : 'bg-card hover:bg-muted/50'
@@ -199,7 +199,7 @@ const Leaderboard = () => {
                         {getRankIcon(entry.rank)}
                       </div>
                       
-                      <Avatar className="h-10 w-10 hover-scale">
+                      <Avatar className="h-10 w-10">
                         {entry.avatar_url && (
                           <img 
                             src={entry.avatar_url} 

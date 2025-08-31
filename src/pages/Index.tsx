@@ -56,21 +56,21 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b sticky top-0 z-50 smooth-transition" id="main-header">
+      <header className="bg-card border-b sticky top-0 z-50 transition-opacity duration-300" id="main-header">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <img 
                 src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
                 alt="Chiro Logo" 
-                className="h-8 w-8 hover-scale"
+                className="h-8 w-8"
               />
               <h1 className="text-xl font-bold text-primary">Chiro Bar</h1>
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2 animate-fade-in">
-                <Avatar className="h-8 w-8 hover-scale">
+              <div className="flex items-center space-x-2">
+                <Avatar className="h-8 w-8">
                   {profile?.avatar_url && (
                     <img 
                       src={profile.avatar_url} 
@@ -93,7 +93,6 @@ const Index = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate('/admin')}
-                  className="hover-lift"
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -103,7 +102,6 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/settings')}
-                className="hover-lift"
               >
                 <Eye className="h-4 w-4" />
               </Button>
@@ -112,7 +110,6 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
-                className="hover-lift"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -124,7 +121,7 @@ const Index = () => {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Greeting */}
-        <div className="text-center space-y-2 animate-fade-in">
+        <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold">
             Hallo, {profile?.name?.split(' ')[0] || 'daar'}! 👋
           </h2>
@@ -135,7 +132,7 @@ const Index = () => {
 
         {/* Balance Card */}
         <TopUpDialog>
-          <div className="w-full animate-slide-in-up">
+          <div className="w-full">
             <BalanceCard 
               balance={balance} 
               onTopUp={() => {}}
@@ -145,10 +142,10 @@ const Index = () => {
 
         {/* Quick Actions - Only show on desktop */}
         {!isMobile && (
-          <div className="grid grid-cols-1 gap-4 animate-slide-in-up">
+          <div className="grid grid-cols-1 gap-4">
             <Button 
               variant="outline" 
-              className="h-16 flex-col space-y-1 hover-lift"
+              className="h-16 flex-col space-y-1"
               onClick={() => navigate('/history')}
             >
               <History className="h-5 w-5" />
@@ -164,27 +161,23 @@ const Index = () => {
         />
 
         {/* Drinks Grid */}
-        <div className="animate-slide-in-up">
-          <DrinkGrid 
-            balance={balance}
-            onDrinkLogged={handleRefreshBalance}
-          />
-        </div>
+        <DrinkGrid 
+          balance={balance}
+          onDrinkLogged={handleRefreshBalance}
+        />
         
         {/* Leaderboard */}
-        <div className="animate-slide-in-up">
-          <Leaderboard />
-        </div>
+        <Leaderboard />
       </main>
       
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 animate-slide-in-down">
+        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
           <div className="grid grid-cols-3 gap-1 p-2">
             <Button
               variant="ghost"
               size="sm"
-              className="flex-col h-16 space-y-1 hover-lift"
+              className="flex-col h-16 space-y-1"
               onClick={() => navigate('/history')}
             >
               <History className="h-5 w-5" />
@@ -195,7 +188,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-col h-16 space-y-1 hover-lift"
+                className="flex-col h-16 space-y-1"
               >
                 <CreditCard className="h-5 w-5" />
                 <span className="text-xs">Opladen</span>
@@ -205,7 +198,7 @@ const Index = () => {
             <Button
               variant="ghost"
               size="sm"
-              className="flex-col h-16 space-y-1 hover-lift"
+              className="flex-col h-16 space-y-1"
               onClick={() => {
                 const leaderboardElement = document.querySelector('[data-testid="leaderboard"]');
                 if (leaderboardElement) {
