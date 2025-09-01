@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Search, Filter, CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, CalendarIcon, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -26,6 +26,7 @@ interface SaleDetail {
   source: string;
   type: 'consumption' | 'topup';
   topup_status?: string;
+  is_refunded?: boolean;
 }
 
 const ITEMS_PER_PAGE = 50;
@@ -77,7 +78,7 @@ const SalesDetailsDashboard = () => {
       
       if (consumptionsError) throw consumptionsError;
 
-      // Get transaction reversals to exclude refunded consumptions
+      // Get transaction reversals to mark refunded consumptions
       const { data: reversals, error: reversalsError } = await supabase
         .from('transaction_reversals')
         .select('original_transaction_id')
@@ -87,8 +88,8 @@ const SalesDetailsDashboard = () => {
       
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
-      // Filter out refunded transactions
-      const validConsumptionsData = consumptionsData.filter(c => !reversedIds.has(c.id));
+      // Don't filter out refunded transactions, but mark them
+      const validConsumptionsData = consumptionsData;
 
       // Fetch top-ups (only paid ones for admin view)
       const { data: topUpsData, error: topUpsError } = await supabase
@@ -122,6 +123,7 @@ const SalesDetailsDashboard = () => {
         item_id: item.item_id,
         item_name: item.items?.name || 'Onbekend product',
         type: 'consumption' as const,
+        is_refunded: reversedIds.has(item.id),
       }));
 
       const topUps = topUpsData.map((item) => ({
@@ -417,12 +419,16 @@ const SalesDetailsDashboard = () => {
                 <TableHead>Type</TableHead>
                 <TableHead>Product/Details</TableHead>
                 <TableHead>Bedrag</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Bron</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedSales.map((sale) => (
-                <TableRow key={`${sale.type}-${sale.id}`}>
+                <TableRow 
+                  key={`${sale.type}-${sale.id}`}
+                  className={sale.is_refunded ? "opacity-60 bg-muted/20" : ""}
+                >
                   <TableCell className="font-mono text-sm">
                     {formatDate(sale.created_at)}
                   </TableCell>
@@ -440,13 +446,31 @@ const SalesDetailsDashboard = () => {
                     {getTypeBadge(sale.type, sale.topup_status)}
                   </TableCell>
                   <TableCell>
-                    {sale.type === 'consumption' ? sale.item_name : 'Saldo opwaardering'}
+                    <div className="flex items-center gap-2">
+                      {sale.type === 'consumption' ? sale.item_name : 'Saldo opwaardering'}
+                      {sale.is_refunded && (
+                        <Undo2 className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell className={cn(
                     "font-medium",
+                    sale.is_refunded ? "line-through text-muted-foreground" : 
                     sale.price_cents > 0 ? "text-green-600" : "text-red-600"
                   )}>
                     {sale.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(sale.price_cents))}
+                  </TableCell>
+                  <TableCell>
+                    {sale.is_refunded ? (
+                      <Badge variant="secondary" className="text-xs">
+                        <Undo2 className="h-3 w-3 mr-1" />
+                        Gerefund
+                      </Badge>
+                    ) : (
+                      <Badge variant="default" className="text-xs">
+                        {sale.type === 'consumption' ? 'Betaald' : 'Voltooid'}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell>{getSourceBadge(sale.source, sale.type)}</TableCell>
                 </TableRow>

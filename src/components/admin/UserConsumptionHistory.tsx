@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Undo2 } from 'lucide-react';
 import { 
   Table, 
   TableBody, 
@@ -21,6 +22,7 @@ interface Consumption {
   items: {
     name: string;
   };
+  is_refunded?: boolean;
 }
 
 interface UserConsumptionHistoryProps {
@@ -47,7 +49,24 @@ const UserConsumptionHistory = ({ userId }: UserConsumptionHistoryProps) => {
         .limit(100);
       
       if (error) throw error;
-      return data as Consumption[];
+
+      // Get refunded consumption IDs
+      const { data: reversals, error: reversalsError } = await supabase
+        .from('transaction_reversals')
+        .select('original_transaction_id')
+        .eq('original_transaction_type', 'consumption');
+      
+      if (reversalsError) throw reversalsError;
+      
+      const refundedIds = new Set(reversals.map(r => r.original_transaction_id));
+
+      // Add refund status to consumptions
+      const consumptionsWithRefundStatus = data.map(consumption => ({
+        ...consumption,
+        is_refunded: refundedIds.has(consumption.id)
+      }));
+      
+      return consumptionsWithRefundStatus as Consumption[];
     },
   });
 
@@ -161,18 +180,37 @@ const UserConsumptionHistory = ({ userId }: UserConsumptionHistoryProps) => {
                   <TableRow>
                     <TableHead>Product</TableHead>
                     <TableHead>Prijs</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Bron</TableHead>
                     <TableHead>Datum</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {consumptions.map((consumption) => (
-                    <TableRow key={consumption.id}>
+                    <TableRow 
+                      key={consumption.id} 
+                      className={consumption.is_refunded ? "opacity-60 bg-muted/20" : ""}
+                    >
                       <TableCell className="font-medium">
-                        {consumption.items.name}
+                        <div className="flex items-center gap-2">
+                          {consumption.items.name}
+                          {consumption.is_refunded && (
+                            <Undo2 className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className={consumption.is_refunded ? "line-through text-muted-foreground" : ""}>
+                        {formatCurrency(consumption.price_cents)}
                       </TableCell>
                       <TableCell>
-                        {formatCurrency(consumption.price_cents)}
+                        {consumption.is_refunded ? (
+                          <Badge variant="secondary" className="text-xs">
+                            <Undo2 className="h-3 w-3 mr-1" />
+                            Gerefund
+                          </Badge>
+                        ) : (
+                          <Badge variant="default" className="text-xs">Betaald</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         {getSourceBadge(consumption.source)}
