@@ -140,7 +140,7 @@ const LateFeeDialog = ({ onLateFeeProcessed, children }: LateFeeDialogProps) => 
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
           <DialogTitle>Te laat boete</DialogTitle>
           <DialogDescription>Voer het aantal minuten te laat in en bevestig.</DialogDescription>

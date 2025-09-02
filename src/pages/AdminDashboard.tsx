@@ -97,55 +97,6 @@ const AdminDashboard = () => {
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Actieve Gebruikers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Producten</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalItems || 0}</div>
-              {stats?.lowStockItems > 0 && (
-                <div className="flex items-center gap-1 mt-1">
-                  <AlertTriangle className="h-3 w-3 text-destructive" />
-                  <span className="text-xs text-destructive">{stats.lowStockItems} weinig voorraad</span>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Maand Omzet</CardTitle>
-              <Euro className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">€{((stats?.monthlyRevenue || 0) / 100).toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">{stats?.monthlyTransactions || 0} transacties</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Week Omzet</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">€{((stats?.weeklyRevenue || 0) / 100).toFixed(2)}</div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Website QR Code */}
         <WebsiteQRGenerator />
