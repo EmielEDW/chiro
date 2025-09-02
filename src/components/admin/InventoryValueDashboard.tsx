@@ -22,7 +22,7 @@ interface InventoryItem {
 type TimePeriod = 'week' | 'month' | 'year';
 
 const InventoryValueDashboard = () => {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('week');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('year');
 
   const { data: items = [], isLoading: itemsLoading } = useQuery({
     queryKey: ['inventory-value'],
@@ -62,9 +62,9 @@ const InventoryValueDashboard = () => {
           dateFormat = 'dd/MM';
           break;
         case 'year':
-          startDate = subWeeks(now, 51); // Last 52 weeks
-          groupBy = "DATE_TRUNC('week', created_at)::date";
-          dateFormat = 'dd/MM';
+          startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1); // Last 12 months
+          groupBy = "DATE_TRUNC('month', created_at)::date";
+          dateFormat = 'MMM yy';
           break;
         default:
           startDate = subDays(now, 6);
@@ -106,7 +106,7 @@ const InventoryValueDashboard = () => {
         let key: string;
         
         if (timePeriod === 'year') {
-          key = format(startOfWeek(date), dateFormat, { locale: nl });
+          key = format(new Date(date.getFullYear(), date.getMonth(), 1), dateFormat, { locale: nl });
         } else {
           key = format(date, dateFormat, { locale: nl });
         }
@@ -118,27 +118,29 @@ const InventoryValueDashboard = () => {
         const revenue = consumption.price_cents;
         const purchasePrice = consumption.items?.purchase_price_cents || 0;
         const profit = revenue - purchasePrice;
+        const isLateFee = consumption.items?.name === 'Te laat boete';
         
-        groupedData[key].revenue += revenue;
-        groupedData[key].profit += profit;
-        
-        // Check if it's a late fee
-        if (consumption.items?.name === 'Te laat boete') {
+        if (isLateFee) {
+          // Only count late fees in their own category
           groupedData[key].lateFees += revenue;
+        } else {
+          // Only count regular items in revenue and profit
+          groupedData[key].revenue += revenue;
+          groupedData[key].profit += profit;
         }
       });
 
       // Fill in missing dates with 0 values
       const result = [];
-      const daysToShow = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 52;
+      const daysToShow = timePeriod === 'week' ? 7 : timePeriod === 'month' ? 30 : 12;
       
       for (let i = daysToShow - 1; i >= 0; i--) {
         let date: Date;
         let key: string;
         
         if (timePeriod === 'year') {
-          date = subWeeks(now, i);
-          key = format(startOfWeek(date), dateFormat, { locale: nl });
+          date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          key = format(date, dateFormat, { locale: nl });
         } else {
           date = subDays(now, i);
           key = format(date, dateFormat, { locale: nl });
@@ -196,7 +198,7 @@ const InventoryValueDashboard = () => {
     switch (timePeriod) {
       case 'week': return 'Laatste 7 dagen';
       case 'month': return 'Laatste 30 dagen';
-      case 'year': return 'Laatste 52 weken';
+      case 'year': return 'Laatste 12 maanden';
       default: return '';
     }
   };
@@ -224,24 +226,27 @@ const InventoryValueDashboard = () => {
           <CardTitle>Periode selectie</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <Button 
+              size="sm"
               variant={timePeriod === 'week' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('week')}
             >
-              Week (dagelijks)
+              W
             </Button>
             <Button 
+              size="sm"
               variant={timePeriod === 'month' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('month')}
             >
-              Maand (dagelijks)
+              M
             </Button>
             <Button 
+              size="sm"
               variant={timePeriod === 'year' ? 'default' : 'outline'}
               onClick={() => setTimePeriod('year')}
             >
-              Jaar (wekelijks)
+              J
             </Button>
           </div>
         </CardContent>
@@ -306,7 +311,7 @@ const InventoryValueDashboard = () => {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <LineChart className="h-5 w-5" />
+            <BarChart3 className="h-5 w-5" />
             Te laat boetes - {getPeriodLabel()}
           </CardTitle>
           <p className="text-sm text-muted-foreground">Inkomsten uit te laat boetes</p>
@@ -314,7 +319,7 @@ const InventoryValueDashboard = () => {
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <RechartsLineChart data={salesData}>
+              <BarChart data={salesData}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" />
                 <YAxis />
@@ -322,43 +327,15 @@ const InventoryValueDashboard = () => {
                   formatter={(value: number) => [`€${value.toFixed(2)}`, 'Te laat boetes']}
                   labelFormatter={(label) => `Datum: ${label}`}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="lateFees" 
-                  stroke="hsl(var(--destructive))" 
-                  strokeWidth={2}
-                  dot={{ fill: "hsl(var(--destructive))", strokeWidth: 2 }}
-                />
-              </RechartsLineChart>
+                <Bar dataKey="lateFees" fill="hsl(var(--destructive))" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </CardContent>
       </Card>
 
       {/* Potential Profit Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4 text-muted-foreground" />
-              <div className="text-sm font-medium text-muted-foreground">Totale voorraad</div>
-            </div>
-            <div className="text-2xl font-bold">{totals.totalItems}</div>
-            <p className="text-xs text-muted-foreground">items in voorraad</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <div className="text-sm font-medium text-muted-foreground">Inkoopwaarde</div>
-            </div>
-            <div className="text-2xl font-bold">{formatCurrency(totals.totalPurchaseValue)}</div>
-            <p className="text-xs text-muted-foreground">totale investering</p>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
