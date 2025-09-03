@@ -415,22 +415,40 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                        {/* Favorite button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                          }}
-                        >
-                          {isFavorite ? (
-                            <Heart className="h-3 w-3 fill-primary text-primary" />
-                          ) : (
-                            <HeartOff className="h-3 w-3" />
-                          )}
-                        </Button>
+                        {/* Action buttons */}
+                        <div className="absolute top-1 right-1 flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const isArchived = archivedItemIds.includes(item.id);
+                              toggleArchive.mutate({ itemId: item.id, isArchived });
+                            }}
+                          >
+                            {archivedItemIds.includes(item.id) ? (
+                              <ArchiveRestore className="h-3 w-3" />
+                            ) : (
+                              <Archive className="h-3 w-3" />
+                            )}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                            }}
+                          >
+                            {isFavorite ? (
+                              <Heart className="h-3 w-3 fill-primary text-primary" />
+                            ) : (
+                              <HeartOff className="h-3 w-3" />
+                            )}
+                          </Button>
+                        </div>
                       </div>
                       
                       <div className="text-center space-y-2">
