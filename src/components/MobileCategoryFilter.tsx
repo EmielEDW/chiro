@@ -8,7 +8,6 @@ const categories = [
   { key: 'bieren', name: 'Bieren', color: 'bg-amber-100 text-amber-800' },
   { key: 'sterke_dranken', name: 'Sterke dranken', color: 'bg-red-100 text-red-800' },
   { key: 'mixed_drinks', name: 'Mixed Drinks', color: 'bg-purple-100 text-purple-800' },
-  { key: 'cocktails', name: 'Cocktails', color: 'bg-pink-100 text-pink-800' },
   { key: 'chips', name: 'Chips', color: 'bg-yellow-100 text-yellow-800' },
   { key: 'andere', name: 'Andere', color: 'bg-gray-100 text-gray-800' }
 ];
