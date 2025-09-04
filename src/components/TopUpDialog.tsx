@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +16,7 @@ interface TopUpDialogProps {
 
 const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const [amount, setAmount] = useState('');
+  const [customAmount, setCustomAmount] = useState('');
   const [method, setMethod] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,9 +24,23 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const { refreshBalance, profile } = useProfile();
 
   const quickAmounts = [25, 50];
+  
+  const getCurrentAmount = () => {
+    return customAmount || amount;
+  };
+  
+  const getCurrentAmountNumber = () => {
+    const currentAmount = getCurrentAmount();
+    return currentAmount ? parseFloat(currentAmount) : 0;
+  };
+  
+  const isAmountTooLow = () => {
+    return getCurrentAmountNumber() < 25;
+  };
 
   const handleTopUp = async () => {
-    if (!amount || !method) {
+    const currentAmount = getCurrentAmount();
+    if (!currentAmount || !method) {
       toast({
         title: "Vul alle velden in",
         description: "Selecteer een bedrag en betaalmethode.",
@@ -33,11 +49,20 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
       return;
     }
 
-    const numAmount = parseFloat(amount);
-    if (numAmount !== 25 && numAmount !== 50) {
+    const numAmount = parseFloat(currentAmount);
+    if (numAmount <= 0) {
       toast({
         title: "Ongeldig bedrag",
-        description: "Selecteer €25 of €50.",
+        description: "Voer een geldig bedrag in dat groter is dan €0.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (numAmount < 25 && method === 'bancontact') {
+      toast({
+        title: "Bedrag te laag voor Bancontact",
+        description: "Voor bedragen onder €25 kan alleen bankoverschrijving gebruikt worden.",
         variant: "destructive",
       });
       return;
@@ -49,9 +74,10 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         description: "Maak een overschrijving naar het opgegeven rekeningnummer. Je saldo wordt handmatig bijgewerkt door de admin.",
         duration: 8000,
       });
-      setIsOpen(false);
-      setAmount('');
-      setMethod('');
+        setIsOpen(false);
+        setAmount('');
+        setCustomAmount('');
+        setMethod('');
       return;
     }
 
@@ -70,6 +96,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         
         setIsOpen(false);
         setAmount('');
+        setCustomAmount('');
         setMethod('');
         
         toast({
@@ -114,13 +141,35 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
               {quickAmounts.map((quickAmount) => (
                 <Button
                   key={quickAmount}
-                  variant={amount === quickAmount.toString() ? "default" : "outline"}
-                  onClick={() => setAmount(quickAmount.toString())}
+                  variant={amount === quickAmount.toString() && !customAmount ? "default" : "outline"}
+                  onClick={() => {
+                    setAmount(quickAmount.toString());
+                    setCustomAmount('');
+                  }}
                   className="h-12"
                 >
                   €{quickAmount}
                 </Button>
               ))}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="custom-amount">Of voer een aangepast bedrag in</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground">€</span>
+                <Input
+                  id="custom-amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={customAmount}
+                  onChange={(e) => {
+                    setCustomAmount(e.target.value);
+                    setAmount('');
+                  }}
+                  className="pl-8"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
             </div>
           </div>
 
@@ -129,14 +178,24 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
             <Label>Betaalmethode</Label>
             <div className="grid gap-2">
               <Card 
-                className={`cursor-pointer transition-colors ${method === 'bancontact' ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setMethod('bancontact')}
+                className={`cursor-pointer transition-colors ${
+                  method === 'bancontact' ? 'ring-2 ring-primary' : ''
+                } ${isAmountTooLow() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => !isAmountTooLow() && setMethod('bancontact')}
               >
                 <CardContent className="p-3 flex items-center space-x-3">
                   <CreditCard className="h-5 w-5 text-primary" />
                   <div className="flex-1">
-                    <p className="font-medium text-sm">Bancontact</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-sm">Bancontact</p>
+                      <Badge variant="preferred" className="text-xs">
+                        Preferred method
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground">Betaal met je bankkaart</p>
+                    {isAmountTooLow() && (
+                      <p className="text-xs text-destructive mt-1">Minimaal €25 voor Bancontact</p>
+                    )}
                   </div>
                   {method === 'bancontact' && (
                     <Badge variant="default" className="text-xs">Geselecteerd</Badge>
@@ -153,6 +212,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
                   <div className="flex-1">
                     <p className="font-medium text-sm">Bankoverschrijving</p>
                     <p className="text-xs text-muted-foreground">BE52 0637 7145 7809</p>
+                    <p className="text-xs text-muted-foreground mt-1">Voor opladingen kleiner dan €25</p>
                   </div>
                   {method === 'banktransfer' && (
                     <Badge variant="default" className="text-xs">Geselecteerd</Badge>
@@ -163,12 +223,12 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
           </div>
 
           {/* Summary */}
-          {amount && method && (
+          {getCurrentAmount() && method && (
             <Card className="bg-muted/50">
               <CardContent className="p-3">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">Totaal op te laden:</span>
-                  <span className="text-lg font-bold text-primary">€{amount}</span>
+                  <span className="text-lg font-bold text-primary">€{getCurrentAmount()}</span>
                 </div>
                 {method === 'banktransfer' && (
                   <div className="mt-2 text-xs text-muted-foreground">
