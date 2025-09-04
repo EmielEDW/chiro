@@ -434,27 +434,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_archived: {
-        Row: {
-          created_at: string
-          id: string
-          item_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          item_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          item_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_favorites: {
         Row: {
           created_at: string
@@ -525,7 +504,6 @@ export type Database = {
         | "mixed_drinks"
         | "andere"
         | "sterke_dranken"
-        | "cocktails"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -663,7 +641,6 @@ export const Constants = {
         "mixed_drinks",
         "andere",
         "sterke_dranken",
-        "cocktails",
       ],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],
