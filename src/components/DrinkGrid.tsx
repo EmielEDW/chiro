@@ -392,8 +392,8 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                        {/* Action buttons */}
-                        <div className="absolute top-1 right-1 flex gap-1">
+                         {/* Action buttons */}
+                        <div className="absolute top-1 left-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -409,6 +409,8 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                               <Archive className="h-3 w-3" />
                             )}
                           </Button>
+                        </div>
+                        <div className="absolute top-1 right-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -514,8 +516,8 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                        {/* Action buttons */}
-                        <div className="absolute top-1 right-1 flex gap-1">
+                         {/* Action buttons */}
+                        <div className="absolute top-1 left-1">
                           <Button
                             variant="ghost"
                             size="sm"
@@ -531,6 +533,8 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                               <Archive className="h-3 w-3" />
                             )}
                           </Button>
+                        </div>
+                        <div className="absolute top-1 right-1">
                           <Button
                             variant="ghost"
                             size="sm"
