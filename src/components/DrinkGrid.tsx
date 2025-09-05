@@ -195,6 +195,14 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     try {
       const clientId = `${Date.now()}-${Math.random()}`;
       
+      if (!user?.id) {
+        toast({
+          title: "Niet ingelogd",
+          description: "Log opnieuw in en probeer het nog eens.",
+          variant: "destructive",
+        });
+        return;
+      }
       const { error } = await supabase
         .from('consumptions')
         .insert({
@@ -202,7 +210,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
           price_cents: item.price_cents,
           source: 'tap',
           client_id: clientId,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: user.id,
         });
 
       if (error) throw error;
