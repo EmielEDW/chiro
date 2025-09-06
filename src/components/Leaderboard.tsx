@@ -47,21 +47,30 @@ const Leaderboard = () => {
     queryFn: async () => {
       const startDate = getDateRange(activeTab);
       
-      const { data, error } = await supabase
+      // First, get all consumptions for the period
+      const { data: consumptions, error: consumptionsError } = await supabase
         .from('consumptions')
-        .select(`
-          user_id,
-          price_cents,
-          id,
-          profiles!consumptions_user_id_fkey (
-            name,
-            avatar_url
-          )
-        `)
+        .select('user_id, price_cents, id')
         .gte('created_at', startDate)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (consumptionsError) throw consumptionsError;
+      
+      // Get all users mentioned in consumptions
+      const uniqueUserIds = [...new Set(consumptions.map(c => c.user_id))];
+      
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, avatar_url')
+        .in('id', uniqueUserIds);
+      
+      if (profilesError) throw profilesError;
+      
+      // Create a map of user profiles for quick lookup
+      const profilesMap = profiles.reduce((acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      }, {} as Record<string, { id: string; name: string; avatar_url?: string }>);
       
       // Get transaction reversals to exclude refunded consumptions
       const { data: reversals, error: reversalsError } = await supabase
@@ -74,13 +83,14 @@ const Leaderboard = () => {
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
       // Filter out refunded transactions
-      const validData = data.filter(consumption => !reversedIds.has(consumption.id));
+      const validData = consumptions.filter(consumption => !reversedIds.has(consumption.id));
       
       // Group by user and sum spending
       const userSpending = validData.reduce((acc, consumption) => {
         const userId = consumption.user_id;
-        const userName = consumption.profiles?.name || 'Onbekend';
-        const avatarUrl = consumption.profiles?.avatar_url;
+        const profile = profilesMap[userId];
+        const userName = profile?.name || 'Onbekend';
+        const avatarUrl = profile?.avatar_url;
         
         if (!acc[userId]) {
           acc[userId] = {
