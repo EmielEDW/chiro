@@ -134,6 +134,15 @@ export default function History() {
       if (!user?.id) throw new Error('User not authenticated');
       if (item.isReversed) throw new Error('Transaction already reversed');
 
+      // Check if transaction is within 4 hours
+      const transactionTime = new Date(item.created_at);
+      const currentTime = new Date();
+      const fourHoursAgo = new Date(currentTime.getTime() - 4 * 60 * 60 * 1000);
+
+      if (transactionTime < fourHoursAgo) {
+        throw new Error('Kan alleen transacties van de laatste 4 uur terugdraaien');
+      }
+
       // First, record the reversal
       const { error: reversalError } = await supabase
         .from('transaction_reversals')
