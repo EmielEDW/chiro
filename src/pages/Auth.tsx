@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useGuestAuth } from '@/hooks/useGuestAuth';
 import { signIn, signUp } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +13,7 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
+import GuestLoginDialog from '@/components/GuestLoginDialog';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -28,14 +30,15 @@ const Auth = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [changeLoading, setChangeLoading] = useState(false);
   const { user } = useAuth();
+  const { guestUser, loginAsGuest } = useGuestAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
+    if (user || guestUser) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, guestUser, navigate]);
 
   // Luister naar Supabase recovery event om reset-formulier te tonen
   useEffect(() => {
@@ -312,11 +315,12 @@ const Auth = () => {
               </Button>
             </form>
           ) : (
-            <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Inloggen</TabsTrigger>
-                <TabsTrigger value="signup">Registreren</TabsTrigger>
-              </TabsList>
+            <>
+              <Tabs defaultValue="signin" className="space-y-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="signin">Inloggen</TabsTrigger>
+                  <TabsTrigger value="signup">Registreren</TabsTrigger>
+                </TabsList>
               
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
@@ -435,7 +439,15 @@ const Auth = () => {
                    </Button>
                 </form>
               </TabsContent>
-            </Tabs>
+              </Tabs>
+              
+              <GuestLoginDialog 
+                onGuestSelect={(guestId, guestName) => {
+                  loginAsGuest(guestId, guestName);
+                  navigate('/');
+                }} 
+              />
+            </>
           )}
 
         </CardContent>

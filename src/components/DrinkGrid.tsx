@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Heart, HeartOff, Image as ImageIcon, Archive, ArchiveRestore, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useState } from 'react';
 
 interface Item {
@@ -28,6 +29,7 @@ interface DrinkGridProps {
 const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
   const [showArchived, setShowArchived] = useState(false);
 
@@ -151,6 +153,13 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   };
 
   const canAfford = (price: number) => {
+    // Admin users can always afford
+    if (profile?.role === 'admin') return true;
+    
+    // Users with credit allowed (like guest accounts) can go negative
+    if (profile?.allow_credit) return true;
+    
+    // Regular users need sufficient balance
     return balance >= price;
   };
 
@@ -224,11 +233,21 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     }
     
     if (!canAfford(item.price_cents)) {
-      toast({
-        title: "Onvoldoende saldo",
-        description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
-        variant: "destructive",
-      });
+      // Different message for users with credit vs regular users
+      if (profile?.allow_credit) {
+        // This shouldn't happen since guest accounts can go negative
+        toast({
+          title: "Fout",
+          description: "Er ging iets mis bij de controle van je saldo.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Onvoldoende saldo",
+          description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
+          variant: "destructive",
+        });
+      }
       return;
     }
 

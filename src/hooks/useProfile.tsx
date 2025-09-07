@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useGuestAuth } from '@/hooks/useGuestAuth';
 import { signOut } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,18 +20,37 @@ export interface Profile {
 
 export const useProfile = () => {
   const { user } = useAuth();
+  const { guestUser } = useGuestAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
+  const currentUserId = user?.id || guestUser?.id;
+
   const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['profile', user?.id],
+    queryKey: ['profile', currentUserId],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!currentUserId) return null;
+      
+      // For guest users, create a mock profile
+      if (guestUser) {
+        return {
+          id: guestUser.id,
+          name: guestUser.name,
+          email: `guest_${guestUser.id}@chiro.local`,
+          role: 'user' as const,
+          chiro_role: null,
+          username: null,
+          avatar_url: null,
+          active: true,
+          allow_credit: true,
+          created_at: new Date().toISOString(),
+        } as Profile;
+      }
       
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', currentUserId)
         .single();
       
       // If profile doesn't exist or is inactive, sign out
@@ -53,32 +73,32 @@ export const useProfile = () => {
       
       return data as Profile;
     },
-    enabled: !!user?.id,
+    enabled: !!currentUserId,
     retry: false,
   });
 
   const { data: balance } = useQuery({
-    queryKey: ['balance', user?.id],
+    queryKey: ['balance', currentUserId],
     queryFn: async () => {
-      if (!user?.id) return 0;
+      if (!currentUserId) return 0;
       
       const { data, error } = await supabase
-        .rpc('calculate_user_balance', { user_uuid: user.id });
+        .rpc('calculate_user_balance', { user_uuid: currentUserId });
       
       if (error) throw error;
       return data as number;
     },
-    enabled: !!user?.id,
+    enabled: !!currentUserId,
   });
 
   const updateProfile = useMutation({
     mutationFn: async (updates: Partial<Profile>) => {
-      if (!user?.id) throw new Error('Not authenticated');
+      if (!currentUserId || guestUser) throw new Error('Cannot update guest profile');
       
       const { data, error } = await supabase
         .from('profiles')
         .update(updates)
-        .eq('id', user.id)
+        .eq('id', currentUserId)
         .select()
         .single();
       
@@ -86,12 +106,12 @@ export const useProfile = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile', user?.id] });
+      queryClient.invalidateQueries({ queryKey: ['profile', currentUserId] });
     },
   });
 
   const refreshBalance = () => {
-    queryClient.invalidateQueries({ queryKey: ['balance', user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['balance', currentUserId] });
   };
 
   return {

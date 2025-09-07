@@ -291,6 +291,7 @@ export type Database = {
           chiro_role: string | null
           created_at: string
           email: string
+          guest_account: boolean
           id: string
           name: string
           role: Database["public"]["Enums"]["user_role"]
@@ -304,6 +305,7 @@ export type Database = {
           chiro_role?: string | null
           created_at?: string
           email: string
+          guest_account?: boolean
           id: string
           name: string
           role?: Database["public"]["Enums"]["user_role"]
@@ -317,6 +319,7 @@ export type Database = {
           chiro_role?: string | null
           created_at?: string
           email?: string
+          guest_account?: boolean
           id?: string
           name?: string
           role?: Database["public"]["Enums"]["user_role"]

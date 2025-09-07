@@ -1,5 +1,6 @@
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/hooks/useAuth';
+import { useGuestAuth } from '@/hooks/useGuestAuth';
 import { signOut } from '@/lib/auth';
 import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
@@ -17,6 +18,7 @@ import { useState } from 'react';
 
 const Index = () => {
   const { user } = useAuth();
+  const { guestUser, logoutGuest } = useGuestAuth();
   const { profile, balance, isLoading, refreshBalance } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -24,13 +26,18 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast({
-        title: "Fout bij uitloggen",
-        description: error.message,
-        variant: "destructive",
-      });
+    if (guestUser) {
+      logoutGuest();
+      navigate('/auth');
+    } else {
+      const { error } = await signOut();
+      if (error) {
+        toast({
+          title: "Fout bij uitloggen",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -38,7 +45,7 @@ const Index = () => {
     refreshBalance();
   };
 
-  if (isLoading || !profile) {
+  if (isLoading || (!profile && !guestUser)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
         <div className="text-center space-y-4">
@@ -70,24 +77,24 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  {profile?.avatar_url && (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt="Profile" 
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                  )}
-                  <AvatarFallback>
-                    {profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium">{profile?.name || 'Gebruiker'}</p>
-                  <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
-                </div>
-              </div>
+          <div className="flex items-center space-x-2">
+            <Avatar className="h-8 w-8">
+              {(profile?.avatar_url || guestUser) && (
+                <img 
+                  src={profile?.avatar_url || "/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png"} 
+                  alt="Profile" 
+                  className="h-full w-full object-cover rounded-full"
+                />
+              )}
+              <AvatarFallback>
+                {(profile?.name || guestUser?.name)?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden sm:block">
+              <p className="text-sm font-medium">{profile?.name || guestUser?.name || 'Gebruiker'}</p>
+              <p className="text-xs text-muted-foreground">{guestUser ? 'Gast' : (profile?.chiro_role || 'Lid')}</p>
+            </div>
+          </div>
               
               {profile?.role === 'admin' && (
                 <Button
