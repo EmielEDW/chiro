@@ -104,11 +104,10 @@ const GuestTabManagement = () => {
   const createGuestAccount = async (guestName: string) => {
     try {
       console.log('Creating guest account for:', guestName);
-      const { data, error } = await (supabase as any).functions.invoke('create-temp-guest', {
-        body: { guest_name: guestName }
-      });
+      const { data, error } = await (supabase as any)
+        .rpc('create_temp_guest_account', { _guest_name: guestName });
       
-      console.log('Edge function response:', { data, error });
+      console.log('RPC response:', { data, error });
       
       if (error) throw error;
 
@@ -118,7 +117,7 @@ const GuestTabManagement = () => {
         title: "Gastaccount aangemaakt",
         description: "Nieuw gastaccount is succesvol aangemaakt.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create guest account error:', error);
       toast({
         title: "Fout",
