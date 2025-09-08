@@ -24,7 +24,7 @@ interface DrinkGridProps {
   onDrinkLogged: () => void;
 }
 
-const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
+export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
