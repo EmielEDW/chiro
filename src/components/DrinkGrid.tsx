@@ -1,21 +1,20 @@
-import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Heart, ShoppingCart, Archive } from 'lucide-react';
+import { Plus, Heart, HeartOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Item {
   id: string;
   name: string;
-  description?: string;
   price_cents: number;
-  image_url?: string;
+  active: boolean;
   category?: string;
+  description?: string;
+  image_url?: string;
   stock_quantity?: number;
   calculated_stock?: number;
 }
@@ -23,45 +22,45 @@ interface Item {
 interface DrinkGridProps {
   balance: number;
   onDrinkLogged: () => void;
-  guestUserId?: string; // Add guest user ID prop
 }
 
-const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
-  const { user } = useAuth();
+export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
-  
-  // Use guest user ID if provided, otherwise use authenticated user ID
-  const currentUserId = guestUserId || user?.id;
 
-  // Calculate items with stock from Supabase
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ['items-with-stock'],
+    queryKey: ['items'],
     queryFn: async () => {
-      const { data: rawItems, error } = await supabase
+      const { data: itemsData, error } = await supabase
         .from('items')
         .select('*')
         .eq('active', true)
-        .or('is_default.eq.true,event_id.is.null')
-        .order('price_cents', { ascending: true });
-
+        .eq('is_default', true)
+        .order('price_cents');
+      
       if (error) throw error;
 
-      // Calculate stock for mixed drinks
+      // Voor mixed drinks, bereken de beschikbare stock op basis van componenten
       const itemsWithCalculatedStock = await Promise.all(
-        rawItems.map(async (item: any) => {
+        (itemsData || []).map(async (item) => {
           if (item.category === 'mixed_drinks') {
-            const { data: calculatedStock, error: stockError } = await supabase
-              .rpc('calculate_mixed_drink_stock', { mixed_drink_item_id: item.id });
-            
-            if (stockError) {
-              console.error('Error calculating stock for mixed drink:', stockError);
+            try {
+              const { data: stockResult, error: stockError } = await supabase
+                .rpc('calculate_mixed_drink_stock', { mixed_drink_item_id: item.id });
+              
+              if (stockError) {
+                console.warn('Error calculating mixed drink stock:', stockError);
+                return { ...item, calculated_stock: 0 };
+              }
+              
+              return { ...item, calculated_stock: stockResult || 0 };
+            } catch (error) {
+              console.warn('Error calculating stock for mixed drink:', error);
               return { ...item, calculated_stock: 0 };
             }
-            
-            return { ...item, calculated_stock: calculatedStock };
           }
-          return item;
+          return { ...item, calculated_stock: item.stock_quantity || 0 };
         })
       );
 
@@ -69,43 +68,41 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
     },
   });
 
-  // Fetch user favorites - only for authenticated users, not guests
-  const { data: favoriteIds = [] } = useQuery({
-    queryKey: ['favorites', currentUserId],
+  const { data: favorites = [] } = useQuery({
+    queryKey: ['favorites', user?.id],
     queryFn: async () => {
-      if (!currentUserId || guestUserId) return [];
-      
+      if (!user?.id) return [];
       const { data, error } = await supabase
         .from('user_favorites')
         .select('item_id')
-        .eq('user_id', currentUserId);
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data.map(f => f.item_id);
     },
-    enabled: !!currentUserId && !guestUserId, // Don't fetch favorites for guests
+    enabled: !!user?.id,
   });
 
   const toggleFavorite = useMutation({
     mutationFn: async ({ itemId, isFavorite }: { itemId: string; isFavorite: boolean }) => {
-      if (!currentUserId || guestUserId) return; // No favorites for guests
+      if (!user?.id) throw new Error('Not authenticated');
       
       if (isFavorite) {
         const { error } = await supabase
           .from('user_favorites')
           .delete()
-          .eq('user_id', currentUserId)
+          .eq('user_id', user.id)
           .eq('item_id', itemId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from('user_favorites')
-          .insert({ user_id: currentUserId, item_id: itemId });
+          .insert({ user_id: user.id, item_id: itemId });
         if (error) throw error;
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['favorites', currentUserId] });
+      queryClient.invalidateQueries({ queryKey: ['favorites', user?.id] });
     },
   });
 
@@ -114,8 +111,6 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
   };
 
   const canAfford = (price: number) => {
-    // For guests, allow negative balance (credit purchases)
-    if (guestUserId) return true;
     return balance >= price;
   };
 
@@ -188,20 +183,10 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
       return;
     }
     
-    // For guests, skip balance check (allow negative balance)
-    if (!guestUserId && !canAfford(item.price_cents)) {
+    if (!canAfford(item.price_cents)) {
       toast({
         title: "Onvoldoende saldo",
         description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!currentUserId) {
-      toast({
-        title: "Niet ingelogd",
-        description: "Je moet ingelogd zijn om een drankje te bestellen.",
         variant: "destructive",
       });
       return;
@@ -217,14 +202,14 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
           price_cents: item.price_cents,
           source: 'tap',
           client_id: clientId,
-          user_id: currentUserId, // Use currentUserId instead of fetching user
+          user_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (error) throw error;
 
       toast({
         title: "Drankje gelogd!",
-        description: `${item.name} voor ${formatCurrency(item.price_cents)} ${guestUserId ? 'is toegevoegd aan je tab' : 'is afgetrokken van je saldo'}.`,
+        description: `${item.name} voor ${formatCurrency(item.price_cents)} is afgetrokken van je saldo.`,
       });
 
       onDrinkLogged();
@@ -243,9 +228,7 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
         {[...Array(6)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
-              <Skeleton className="h-20 w-full mb-2" />
-              <Skeleton className="h-4 w-3/4 mb-1" />
-              <Skeleton className="h-3 w-1/2" />
+              <div className="h-24 bg-muted rounded"></div>
             </CardContent>
           </Card>
         ))}
@@ -253,127 +236,135 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
     );
   }
 
-  // Group items by category
-  const groupedItems = items.reduce((groups, item) => {
-    const category = item.category || 'andere';
-    if (!groups[category]) {
-      groups[category] = [];
+  // Group items by category and sort within each category
+  const groupedItems = items.reduce((acc, item) => {
+    const category = item.category || 'other';
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    groups[category].push(item);
-    return groups;
+    acc[category].push(item);
+    return acc;
   }, {} as Record<string, Item[]>);
 
-  // Sort categories by order and sort items within each category
-  const sortedCategories = Object.keys(groupedItems)
-    .sort((a, b) => getCategoryOrder(a) - getCategoryOrder(b))
-    .map(category => ({
-      category,
-      items: groupedItems[category].sort((a, b) => {
-        // Sort by favorite status (favorites first), then by price
-        const aIsFavorite = favoriteIds.includes(a.id);
-        const bIsFavorite = favoriteIds.includes(b.id);
-        
-        if (aIsFavorite && !bIsFavorite) return -1;
-        if (!aIsFavorite && bIsFavorite) return 1;
-        
-        return a.price_cents - b.price_cents;
-      })
-    }));
+  // Sort categories by order and items within each category (favorites first, then by price)
+  const sortedCategories = Object.keys(groupedItems).sort((a, b) => {
+    return getCategoryOrder(a) - getCategoryOrder(b);
+  });
 
-  // Show favorites section at the top if any favorites exist
-  const favoriteItems = items.filter(item => favoriteIds.includes(item.id));
+  // Sort items within each category
+  Object.keys(groupedItems).forEach(category => {
+    groupedItems[category].sort((a, b) => {
+      const aIsFavorite = favorites.includes(a.id);
+      const bIsFavorite = favorites.includes(b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return a.price_cents - b.price_cents;
+    });
+  });
+
+  // Get favorite items for the top section
+  const favoriteItems = items.filter(item => favorites.includes(item.id));
 
   return (
     <div className="space-y-6">
-      {/* Favorites section - only for authenticated users */}
-      {favoriteItems.length > 0 && !guestUserId && (
-        <div>
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Heart className="h-5 w-5 text-red-500 fill-current" />
-            Favorieten
-          </h3>
-          <div className="grid grid-cols-2 gap-4 mb-6">
+      {/* Favorites section at the top */}
+      {favoriteItems.length > 0 && (
+        <div className="space-y-4" data-category="favorites">
+          <div className="flex items-center gap-2">
+            <Heart className="h-5 w-5 text-primary fill-primary" />
+            <h3 className="text-lg font-semibold text-primary">Favorieten</h3>
+            <Badge 
+              variant="default" 
+              className="text-xs bg-primary text-primary-foreground"
+            >
+              {favoriteItems.length} items
+            </Badge>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
             {favoriteItems.map((item) => {
+              const affordable = canAfford(item.price_cents);
+              const isFavorite = favorites.includes(item.id);
+              const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
               const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
               const isOutOfStock = stockValue === 0;
-              const affordable = canAfford(item.price_cents);
-
+              
               return (
                 <Card 
-                  key={item.id} 
-                  className={`relative transition-all duration-200 ${
-                    isOutOfStock ? 'opacity-50' : 
-                    affordable ? 'hover:shadow-md border-primary/20' : 'opacity-75'
-                  }`}
+                  key={`favorite-${item.id}`} 
+                  className={`transition-all relative bg-gradient-to-t from-primary/10 to-white hover:from-primary/20 hover:to-white border-primary/30 ${!affordable || isOutOfStock ? 'opacity-50' : 'hover:shadow-lg'} ring-2 ring-primary/50`}
                 >
-                  <CardContent className="p-4 space-y-3">
-                    {item.image_url && (
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="space-y-1">
-                      <h4 className="font-medium text-sm leading-tight">{item.name}</h4>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {formatCurrency(item.price_cents)}
-                      </Badge>
-                      
-                      <div className="flex gap-1">
-                        {!guestUserId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => toggleFavorite.mutate({ 
-                              itemId: item.id, 
-                              isFavorite: favoriteIds.includes(item.id) 
-                            })}
-                          >
-                            <Heart 
-                              className={`h-3 w-3 ${
-                                favoriteIds.includes(item.id) 
-                                  ? 'text-red-500 fill-current' 
-                                  : 'text-gray-400'
-                              }`} 
-                            />
-                          </Button>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-3">
+                      {/* Image placeholder */}
+                      <div className="relative">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-32 object-contain rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
                         )}
                         
+                        {/* Favorite button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => logDrink(item)}
-                          disabled={isOutOfStock || (!guestUserId && !affordable)}
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
                         >
-                          <ShoppingCart className="h-3 w-3" />
+                          <Heart className="h-3 w-3 fill-primary text-primary" />
                         </Button>
                       </div>
-                    </div>
-
-                    {stockValue !== undefined && (
-                      <div className="text-xs text-muted-foreground">
-                        {isOutOfStock ? (
-                          <span className="text-red-600 font-medium">Uitverkocht</span>
-                        ) : (
-                          <span>Voorraad: {stockValue}</span>
+                      
+                      <div className="text-center space-y-2">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
                         )}
+                        
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {formatCurrency(item.price_cents)}
+                          </Badge>
+                          
+                          {isOutOfStock ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Niet beschikbaar
+                            </Badge>
+                          ) : isLowStock ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Weinig voorraad: {stockValue}
+                            </Badge>
+                          ) : item.category === 'mixed_drinks' ? (
+                            <Badge variant="default" className="text-xs">
+                              Beschikbaar
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
-                    )}
+                      
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          logDrink(item);
+                        }}
+                        disabled={!affordable || isOutOfStock}
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Registreer
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );
@@ -382,99 +373,106 @@ const DrinkGrid = ({ balance, onDrinkLogged, guestUserId }: DrinkGridProps) => {
         </div>
       )}
 
-      {/* Categories */}
-      {sortedCategories.map(({ category, items }) => (
-        <div key={category}>
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Badge className={getCategoryColor(category)}>
-              {getCategoryName(category)}
+      {/* Regular categories */}
+      {sortedCategories.map((category) => (
+        <div key={category} className="space-y-4" data-category={category}>
+          <div className="flex items-center gap-2">
+            <h3 className="text-lg font-semibold">{getCategoryName(category)}</h3>
+            <Badge 
+              variant="secondary" 
+              className={`text-xs ${getCategoryColor(category)}`}
+            >
+              {groupedItems[category].length} items
             </Badge>
-            <span className="text-sm text-muted-foreground">({items.length})</span>
-          </h3>
+          </div>
           
           <div className="grid grid-cols-2 gap-4">
-            {items.map((item) => {
+            {groupedItems[category].map((item) => {
+              const affordable = canAfford(item.price_cents);
+              const isFavorite = favorites.includes(item.id);
+              const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
               const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
               const isOutOfStock = stockValue === 0;
-              const affordable = canAfford(item.price_cents);
-              const isFavorite = favoriteIds.includes(item.id);
-
+              
               return (
                 <Card 
                   key={item.id} 
-                  className={`relative transition-all duration-200 ${
-                    isOutOfStock ? 'opacity-50' : 
-                    affordable ? 'hover:shadow-md border-primary/20' : 'opacity-75'
-                  } ${isFavorite && !guestUserId ? 'ring-1 ring-red-200' : ''}`}
+                  className={`transition-all relative bg-gradient-to-t from-red-100 to-white hover:from-red-200 hover:to-white ${!affordable || isOutOfStock ? 'opacity-50' : 'hover:shadow-lg'} ${isFavorite ? 'ring-2 ring-primary' : ''}`}
                 >
-                  <CardContent className="p-4 space-y-3">
-                    {item.image_url && (
-                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 mb-2">
-                        <img 
-                          src={item.image_url} 
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    
-                    <div className="space-y-1">
-                      <h4 className="font-medium text-sm leading-tight">{item.name}</h4>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
-                        {formatCurrency(item.price_cents)}
-                      </Badge>
-                      
-                      <div className="flex gap-1">
-                        {!guestUserId && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={() => toggleFavorite.mutate({ 
-                              itemId: item.id, 
-                              isFavorite: isFavorite 
-                            })}
-                          >
-                            <Heart 
-                              className={`h-3 w-3 ${
-                                isFavorite 
-                                  ? 'text-red-500 fill-current' 
-                                  : 'text-gray-400'
-                              }`} 
-                            />
-                          </Button>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col space-y-3">
+                      {/* Image placeholder */}
+                      <div className="relative">
+                        {item.image_url ? (
+                          <img 
+                            src={item.image_url} 
+                            alt={item.name}
+                            className="w-full h-32 object-contain rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-32 bg-muted rounded flex items-center justify-center border">
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          </div>
                         )}
                         
+                        {/* Favorite button */}
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => logDrink(item)}
-                          disabled={isOutOfStock || (!guestUserId && !affordable)}
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
                         >
-                          <ShoppingCart className="h-3 w-3" />
+                          {isFavorite ? (
+                            <Heart className="h-3 w-3 fill-primary text-primary" />
+                          ) : (
+                            <HeartOff className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
-                    </div>
-
-                    {stockValue !== undefined && (
-                      <div className="text-xs text-muted-foreground">
-                        {isOutOfStock ? (
-                          <span className="text-red-600 font-medium">Uitverkocht</span>
-                        ) : (
-                          <span>Voorraad: {stockValue}</span>
+                      
+                      <div className="text-center space-y-2">
+                        <h4 className="font-medium text-sm">{item.name}</h4>
+                        {item.description && (
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
                         )}
+                        
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge variant="outline" className="text-xs">
+                            {formatCurrency(item.price_cents)}
+                          </Badge>
+                          
+                          {isOutOfStock ? (
+                            <Badge variant="destructive" className="text-xs">
+                              Niet beschikbaar
+                            </Badge>
+                          ) : isLowStock ? (
+                            <Badge variant="secondary" className="text-xs">
+                              Weinig voorraad: {stockValue}
+                            </Badge>
+                          ) : item.category === 'mixed_drinks' ? (
+                            <Badge variant="default" className="text-xs">
+                              Beschikbaar
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
-                    )}
+                      
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          logDrink(item);
+                        }}
+                        disabled={!affordable || isOutOfStock}
+                        size="sm"
+                        className="w-full"
+                      >
+                        <Plus className="mr-1 h-3 w-3" />
+                        Registreer
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               );

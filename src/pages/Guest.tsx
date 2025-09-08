@@ -169,7 +169,6 @@ const Guest = () => {
           <h2 className="text-lg font-semibold text-center">Kies je drankje</h2>
           <DrinkGrid 
             balance={balance} 
-            guestUserId={id}
             onDrinkLogged={() => {
               refetchBalance();
             }}
