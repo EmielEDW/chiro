@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Heart, HeartOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
+import { useState } from 'react';
 interface Item {
   id: string;
   name: string;
@@ -30,6 +30,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [loggingItemId, setLoggingItemId] = useState<string | null>(null);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
@@ -176,6 +177,9 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
   };
 
   const logDrink = async (item: Item) => {
+    if (loggingItemId) return; // prevent double-clicks
+    setLoggingItemId(item.id);
+
     const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
     
     if (stockValue === 0) {
@@ -184,6 +188,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         description: "Dit product is momenteel niet beschikbaar.",
         variant: "destructive",
       });
+      setLoggingItemId(null);
       return;
     }
     
@@ -193,15 +198,13 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
         variant: "destructive",
       });
+      setLoggingItemId(null);
       return;
     }
 
     try {
       const clientId = `${Date.now()}-${Math.random()}`;
-      
-      // Voor gasten gebruik guestUserId, anders auth user
       const userId = isGuestMode ? guestUserId : (await supabase.auth.getUser()).data.user?.id;
-      
       const { error } = await supabase
         .from('consumptions')
         .insert({
@@ -226,6 +229,8 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         description: "Er ging iets mis bij het loggen van je drankje.",
         variant: "destructive",
       });
+    } finally {
+      setLoggingItemId(null);
     }
   };
 
@@ -362,16 +367,17 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                       </div>
                       
                       <Button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           logDrink(item);
                         }}
-                        disabled={!affordable || isOutOfStock}
+                        disabled={!affordable || isOutOfStock || loggingItemId === item.id}
                         size="sm"
                         className="w-full"
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        Registreer
+                        {loggingItemId === item.id ? 'Bezig...' : 'Registreer'}
                       </Button>
                     </div>
                   </CardContent>
@@ -472,16 +478,17 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                       </div>
                       
                       <Button
+                        type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           logDrink(item);
                         }}
-                        disabled={!affordable || isOutOfStock}
+                        disabled={!affordable || isOutOfStock || loggingItemId === item.id}
                         size="sm"
                         className="w-full"
                       >
                         <Plus className="mr-1 h-3 w-3" />
-                        Registreer
+                        {loggingItemId === item.id ? 'Bezig...' : 'Registreer'}
                       </Button>
                     </div>
                   </CardContent>
