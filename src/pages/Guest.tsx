@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreditCard, User, QrCode, LogOut } from 'lucide-react';
 import DrinkGrid from '@/components/DrinkGrid';
-import GuestHistory from '@/components/GuestHistory';
 import { useToast } from '@/hooks/use-toast';
 
 interface GuestProfile {
@@ -83,6 +82,7 @@ const Guest = () => {
   }, [id]);
 
   const handleShowPayment = () => {
+    if (balance >= 0) return;
     setShowPaymentDialog(true);
   };
 
@@ -142,45 +142,27 @@ const Guest = () => {
           </CardHeader>
         </Card>
 
-        {/* Payment section - altijd tonen voor gasten */}
-        <Card className="border-amber-200 bg-amber-50/50">
-          <CardContent className="p-4">
-            <div className="text-center space-y-3">
-              {balance < 0 ? (
-                <>
-                  <h3 className="font-semibold text-amber-800">Rekening afrekenen</h3>
-                  <p className="text-sm text-amber-700">
-                    Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong>
-                  </p>
-                  <Button 
-                    onClick={handleShowPayment}
-                    className="w-full"
-                    size="lg"
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Bekijk betaalgegevens
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <h3 className="font-semibold text-green-800">Nog geen schuld</h3>
-                  <p className="text-sm text-green-700">
-                    Huidig saldo: <strong>{formatCurrency(balance)}</strong> - Bestel drankjes om je schuld op te bouwen
-                  </p>
-                  <Button 
-                    onClick={handleShowPayment}
-                    variant="outline"
-                    className="w-full"
-                    size="lg"
-                  >
-                    <CreditCard className="mr-2 h-4 w-4" />
-                    Bekijk betaalinfo
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Payment section - only show if balance is negative */}
+        {balance < 0 && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardContent className="p-4">
+              <div className="text-center space-y-3">
+                <h3 className="font-semibold text-amber-800">Rekening afrekenen</h3>
+                <p className="text-sm text-amber-700">
+                  Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong>
+                </p>
+                <Button 
+                  onClick={handleShowPayment}
+                  className="w-full"
+                  size="lg"
+                >
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Bekijk betaalgegevens
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Drink Grid */}
         <div className="space-y-4">
@@ -190,16 +172,8 @@ const Guest = () => {
             onDrinkLogged={() => {
               refetchBalance();
             }}
-            isGuestMode={true}
-            guestUserId={id}
           />
         </div>
-
-        {/* Guest History */}
-        <GuestHistory 
-          guestUserId={id || ''}
-          onBalanceChange={refetchBalance}
-        />
 
         {/* Footer */}
         <Card className="border-muted">
@@ -225,13 +199,13 @@ const Guest = () => {
             <div className="space-y-4">
               <div className="text-center">
                 <p className="text-lg font-semibold text-destructive">
-                  Te betalen: {balance < 0 ? formatCurrency(Math.abs(balance)) : '€0.00'}
+                  Te betalen: {formatCurrency(Math.abs(balance))}
                 </p>
               </div>
               <div className="space-y-3 p-4 bg-muted rounded-lg">
                 <div>
                   <p className="font-semibold">Betaal naar:</p>
-                  <p className="text-sm">BE52 0637 7145 7809</p>
+                  <p className="text-sm">BE12 3456 7890 1234</p>
                 </div>
                 <div>
                   <p className="font-semibold">Mededeling:</p>
