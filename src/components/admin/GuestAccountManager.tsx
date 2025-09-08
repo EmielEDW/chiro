@@ -26,10 +26,13 @@ interface GuestProfile {
   guest_account: boolean;
   allow_credit: boolean;
   created_at: string;
+  guest_number: number;
+  occupied: boolean;
+  occupied_by_name?: string;
 }
 
 const GuestAccountManager = () => {
-  const [guestName, setGuestName] = useState('');
+  const [guestNumber, setGuestNumber] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -64,7 +67,7 @@ const GuestAccountManager = () => {
   });
 
   const createGuestAccount = useMutation({
-    mutationFn: async (name: string) => {
+    mutationFn: async (guestNumber: number) => {
       // Generate a unique guest ID
       const guestId = crypto.randomUUID();
       
@@ -72,11 +75,13 @@ const GuestAccountManager = () => {
         .from('profiles')
         .insert({
           id: guestId,
-          name: name,
-          email: `guest_${guestId}@chiro.local`,
+          name: `Gast ${guestNumber}`,
+          email: `guest_${guestNumber}@chiro.local`,
           guest_account: true,
           allow_credit: true,
-          role: 'user'
+          role: 'user',
+          guest_number: guestNumber,
+          occupied: false
         })
         .select()
         .single();
@@ -88,9 +93,9 @@ const GuestAccountManager = () => {
       queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
       toast({
         title: "Gast account aangemaakt",
-        description: `Account voor ${guestName} is succesvol aangemaakt.`,
+        description: `Account voor Gast ${guestNumber} is succesvol aangemaakt.`,
       });
-      setGuestName('');
+      setGuestNumber('');
       setIsCreateDialogOpen(false);
     },
     onError: (error: any) => {
@@ -105,7 +110,7 @@ const GuestAccountManager = () => {
   const settleGuestAccount = useMutation({
     mutationFn: async ({ guestId, amount, guestName }: { guestId: string; amount: number; guestName: string }) => {
       // Create an adjustment to bring balance to 0
-      const { data, error } = await supabase
+      const { data: balanceData, error: balanceError } = await supabase
         .from('adjustments')
         .insert({
           user_id: guestId,
@@ -114,14 +119,22 @@ const GuestAccountManager = () => {
           created_by: (await supabase.auth.getUser()).data.user?.id
         });
       
-      if (error) throw error;
-      return data;
+      if (balanceError) throw balanceError;
+      
+      // Free the guest account
+      const { data: freeData, error: freeError } = await supabase
+        .rpc('free_guest_account', { _guest_id: guestId });
+      
+      if (freeError) throw freeError;
+      
+      return { balance: balanceData, freed: freeData };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest-balances'] });
+      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
       toast({
         title: "Account afgerekend",
-        description: "Het gast account is succesvol afgerekend en op €0,00 gezet.",
+        description: "Het gast account is succesvol afgerekend en weer vrijgegeven.",
       });
     },
     onError: (error: any) => {
@@ -163,15 +176,16 @@ const GuestAccountManager = () => {
   };
 
   const handleCreateGuest = () => {
-    if (!guestName.trim()) {
+    const number = parseInt(guestNumber);
+    if (!guestNumber.trim() || isNaN(number) || number <= 0) {
       toast({
-        title: "Naam vereist",
-        description: "Voer een naam in voor het gast account.",
+        title: "Geldig nummer vereist",
+        description: "Voer een geldig gastnummer in (bijv. 1, 2, 3).",
         variant: "destructive",
       });
       return;
     }
-    createGuestAccount.mutate(guestName.trim());
+    createGuestAccount.mutate(number);
   };
 
   const handleSettleAccount = (guestId: string, balance: number, guestName: string) => {
@@ -204,12 +218,13 @@ const GuestAccountManager = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="guest-name">Naam van de gast</Label>
+                  <Label htmlFor="guest-number">Gastnummer</Label>
                   <Input
-                    id="guest-name"
-                    value={guestName}
-                    onChange={(e) => setGuestName(e.target.value)}
-                    placeholder="Bijv. Jan Janssen"
+                    id="guest-number"
+                    value={guestNumber}
+                    onChange={(e) => setGuestNumber(e.target.value)}
+                    placeholder="Bijv. 1, 2, 3, ..."
+                    type="number"
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
@@ -241,6 +256,7 @@ const GuestAccountManager = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>Gast</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Saldo</TableHead>
                   <TableHead>Aangemaakt</TableHead>
                   <TableHead>Acties</TableHead>
@@ -259,8 +275,15 @@ const GuestAccountManager = () => {
                         </Avatar>
                         <div>
                           <div className="font-medium">{guest.name}</div>
-                          <Badge variant="secondary" className="text-xs">Gast</Badge>
+                          <div className="text-xs text-muted-foreground">
+                            {guest.occupied_by_name || 'Beschikbaar'}
+                          </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={guest.occupied ? "destructive" : "secondary"}>
+                          {guest.occupied ? "Bezet" : "Beschikbaar"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <span className={`font-medium ${
@@ -274,11 +297,11 @@ const GuestAccountManager = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {balance < 0 && (
+                          {guest.occupied && balance < 0 && (
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleSettleAccount(guest.id, balance, guest.name)}
+                              onClick={() => handleSettleAccount(guest.id, balance, guest.occupied_by_name || guest.name)}
                               disabled={settleGuestAccount.isPending}
                             >
                               <CreditCard className="h-4 w-4 mr-1" />
