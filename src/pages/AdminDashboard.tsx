@@ -23,7 +23,6 @@ import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
-import GuestAccountManager from '@/components/admin/GuestAccountManager';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -127,9 +126,8 @@ const AdminDashboard = () => {
             <InventoryValueDashboard />
           </TabsContent>
 
-          <TabsContent value="users" className="space-y-6">
+          <TabsContent value="users">
             <UserManagement />
-            <GuestAccountManager />
           </TabsContent>
           
           <TabsContent value="stock">

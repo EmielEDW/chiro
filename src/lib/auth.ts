@@ -9,7 +9,7 @@ export const signIn = async (email: string, password: string) => {
   return { data, error };
 };
 
-export const signUp = async (email: string, password: string, name: string, username?: string, chiroRole?: string, isGuest?: boolean) => {
+export const signUp = async (email: string, password: string, name: string) => {
   const redirectUrl = `${window.location.origin}/`;
   
   const { data, error } = await supabase.auth.signUp({
@@ -18,10 +18,7 @@ export const signUp = async (email: string, password: string, name: string, user
     options: {
       emailRedirectTo: redirectUrl,
       data: {
-        name: name,
-        username: username,
-        chiro_role: chiroRole,
-        guest: isGuest
+        name: name
       }
     }
   });

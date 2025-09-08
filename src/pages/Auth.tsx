@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useGuestAuth } from '@/hooks/useGuestAuth';
 import { signIn, signUp } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +12,6 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import { Checkbox } from '@/components/ui/checkbox';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
@@ -21,7 +19,6 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [username, setUsername] = useState('');
   const [chiroRole, setChiroRole] = useState('');
-  const [isGuest, setIsGuest] = useState(false);
   const [loading, setLoading] = useState(false);
   // Wachtwoord reset state
   const [showReset, setShowReset] = useState(false);
@@ -31,15 +28,14 @@ const Auth = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [changeLoading, setChangeLoading] = useState(false);
   const { user } = useAuth();
-  const { guestUser, loginAsGuest } = useGuestAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user || guestUser) {
+    if (user) {
       navigate('/');
     }
-  }, [user, guestUser, navigate]);
+  }, [user, navigate]);
 
   // Luister naar Supabase recovery event om reset-formulier te tonen
   useEffect(() => {
@@ -173,7 +169,7 @@ const Auth = () => {
       }
     }
 
-    const { data, error } = await signUp(email, password, name, username, chiroRole, isGuest);
+    const { data, error } = await signUp(email, password, name);
     
     if (error) {
       toast({
@@ -184,11 +180,33 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Update chiro role and admin role if provided
+      if (data.user) {
+        const updates: any = {};
+        
+        if (chiroRole) {
+          updates.chiro_role = chiroRole;
+        }
+        
+        if (username) {
+          updates.username = username.toLowerCase();
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          const { error: roleError } = await supabase
+            .from('profiles')
+            .update(updates)
+            .eq('id', data.user.id);
+            
+          if (roleError) {
+            console.error('Error updating profile:', roleError);
+          }
+        }
+      }
+      
       toast({
         title: "Account aangemaakt!",
-        description: isGuest 
-          ? "Je gastaccount is aangemaakt! Je kunt drankjes kopen ook al staat je saldo negatief."
-          : "Je kunt nu inloggen met je nieuwe account.",
+        description: "Je kunt nu inloggen met je nieuwe account.",
       });
       
       // Clear form
@@ -197,7 +215,6 @@ const Auth = () => {
       setName('');
       setUsername('');
       setChiroRole('');
-      setIsGuest(false);
     }
     
     setLoading(false);
@@ -295,12 +312,11 @@ const Auth = () => {
               </Button>
             </form>
           ) : (
-            <>
-              <Tabs defaultValue="signin" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">Inloggen</TabsTrigger>
-                  <TabsTrigger value="signup">Registreren</TabsTrigger>
-                </TabsList>
+            <Tabs defaultValue="signin" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Inloggen</TabsTrigger>
+                <TabsTrigger value="signup">Registreren</TabsTrigger>
+              </TabsList>
               
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
@@ -399,7 +415,7 @@ const Auth = () => {
                       minLength={6}
                     />
                   </div>
-                    <div className="space-y-2">
+                   <div className="space-y-2">
                      <Label htmlFor="chiro-role">Chiro Rol</Label>
                      <Select value={chiroRole} onValueChange={setChiroRole}>
                        <SelectTrigger>
@@ -412,26 +428,14 @@ const Auth = () => {
                        </SelectContent>
                      </Select>
                    </div>
-
-                   <div className="flex items-center space-x-2">
-                     <Checkbox
-                       id="guest-account"
-                       checked={isGuest}
-                       onCheckedChange={(checked) => setIsGuest(checked as boolean)}
-                     />
-                     <Label htmlFor="guest-account" className="text-sm">
-                       Ik ben een gast (kan negatief staan)
-                     </Label>
-                   </div>
                    
                    <Button type="submit" className="w-full" disabled={loading}>
                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     {isGuest ? 'Gastaccount aanmaken' : 'Account aanmaken'}
+                     Account aanmaken
                    </Button>
                 </form>
               </TabsContent>
-              </Tabs>
-            </>
+            </Tabs>
           )}
 
         </CardContent>

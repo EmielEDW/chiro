@@ -3,11 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Heart, HeartOff, Image as ImageIcon, Archive, ArchiveRestore, Eye, EyeOff } from 'lucide-react';
+import { Plus, Heart, HeartOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-import { useState } from 'react';
 
 interface Item {
   id: string;
@@ -29,9 +27,7 @@ interface DrinkGridProps {
 const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { profile } = useProfile();
   const queryClient = useQueryClient();
-  const [showArchived, setShowArchived] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
@@ -87,21 +83,6 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     enabled: !!user?.id,
   });
 
-  const { data: archived = [] } = useQuery({
-    queryKey: ['archived', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from('user_archived')
-        .select('item_id')
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      return data.map(a => a.item_id);
-    },
-    enabled: !!user?.id,
-  });
-
   const toggleFavorite = useMutation({
     mutationFn: async ({ itemId, isFavorite }: { itemId: string; isFavorite: boolean }) => {
       if (!user?.id) throw new Error('Not authenticated');
@@ -125,41 +106,11 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     },
   });
 
-  const toggleArchived = useMutation({
-    mutationFn: async ({ itemId, isArchived }: { itemId: string; isArchived: boolean }) => {
-      if (!user?.id) throw new Error('Not authenticated');
-      
-      if (isArchived) {
-        const { error } = await supabase
-          .from('user_archived')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('item_id', itemId);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('user_archived')
-          .insert({ user_id: user.id, item_id: itemId });
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['archived', user?.id] });
-    },
-  });
-
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
   };
 
   const canAfford = (price: number) => {
-    // Admin users can always afford
-    if (profile?.role === 'admin') return true;
-    
-    // Users with credit allowed (like guest accounts) can go negative
-    if (profile?.allow_credit) return true;
-    
-    // Regular users need sufficient balance
     return balance >= price;
   };
 
@@ -233,37 +184,17 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     }
     
     if (!canAfford(item.price_cents)) {
-      // Different message for users with credit vs regular users
-      if (profile?.allow_credit) {
-        // This shouldn't happen since guest accounts can go negative
-        toast({
-          title: "Fout",
-          description: "Er ging iets mis bij de controle van je saldo.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Onvoldoende saldo",
-          description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Onvoldoende saldo",
+        description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
+        variant: "destructive",
+      });
       return;
     }
 
     try {
       const clientId = `${Date.now()}-${Math.random()}`;
       
-      const currentUserId = user?.id || profile?.id;
-      
-      if (!currentUserId) {
-        toast({
-          title: "Niet ingelogd",
-          description: "Log opnieuw in en probeer het nog eens.",
-          variant: "destructive",
-        });
-        return;
-      }
       const { error } = await supabase
         .from('consumptions')
         .insert({
@@ -271,7 +202,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
           price_cents: item.price_cents,
           source: 'tap',
           client_id: clientId,
-          user_id: currentUserId,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
         });
 
       if (error) throw error;
@@ -305,14 +236,8 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     );
   }
 
-  // Filter items based on archived status and showArchived toggle
-  const filteredItems = items.filter(item => {
-    const isArchived = archived.includes(item.id);
-    return showArchived ? isArchived : !isArchived;
-  });
-
   // Group items by category and sort within each category
-  const groupedItems = filteredItems.reduce((acc, item) => {
+  const groupedItems = items.reduce((acc, item) => {
     const category = item.category || 'other';
     if (!acc[category]) {
       acc[category] = [];
@@ -338,37 +263,11 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     });
   });
 
-  // Get favorite items for the top section (exclude archived unless showing archived)
-  const favoriteItems = items.filter(item => {
-    const isFavorite = favorites.includes(item.id);
-    const isArchived = archived.includes(item.id);
-    if (showArchived) {
-      return isFavorite && isArchived;
-    } else {
-      return isFavorite && !isArchived;
-    }
-  });
+  // Get favorite items for the top section
+  const favoriteItems = items.filter(item => favorites.includes(item.id));
 
   return (
     <div className="space-y-6">
-      {/* Archive toggle */}
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowArchived(!showArchived)}
-          className="flex items-center gap-2"
-        >
-          {showArchived ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-          {showArchived ? 'Verberg gearchiveerde' : 'Toon gearchiveerde'}
-        </Button>
-        {showArchived && (
-          <Badge variant="secondary" className="text-xs">
-            Gearchiveerde drankjes
-          </Badge>
-        )}
-      </div>
-
       {/* Favorites section at the top */}
       {favoriteItems.length > 0 && (
         <div className="space-y-4" data-category="favorites">
@@ -387,7 +286,6 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
             {favoriteItems.map((item) => {
               const affordable = canAfford(item.price_cents);
               const isFavorite = favorites.includes(item.id);
-              const isArchived = archived.includes(item.id);
               const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
               const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
               const isOutOfStock = stockValue === 0;
@@ -413,37 +311,18 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                         {/* Action buttons */}
-                        <div className="absolute top-1 left-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleArchived.mutate({ itemId: item.id, isArchived });
-                            }}
-                          >
-                            {isArchived ? (
-                              <ArchiveRestore className="h-3 w-3" />
-                            ) : (
-                              <Archive className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
-                        <div className="absolute top-1 right-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                            }}
-                          >
-                            <Heart className="h-3 w-3 fill-primary text-primary" />
-                          </Button>
-                        </div>
+                        {/* Favorite button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
+                        >
+                          <Heart className="h-3 w-3 fill-primary text-primary" />
+                        </Button>
                       </div>
                       
                       <div className="text-center space-y-2">
@@ -511,7 +390,6 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
             {groupedItems[category].map((item) => {
               const affordable = canAfford(item.price_cents);
               const isFavorite = favorites.includes(item.id);
-              const isArchived = archived.includes(item.id);
               const isLowStock = (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) !== null && (item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity) < 10;
               const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
               const isOutOfStock = stockValue === 0;
@@ -537,41 +415,22 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                         {/* Action buttons */}
-                        <div className="absolute top-1 left-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleArchived.mutate({ itemId: item.id, isArchived });
-                            }}
-                          >
-                            {isArchived ? (
-                              <ArchiveRestore className="h-3 w-3" />
-                            ) : (
-                              <Archive className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
-                        <div className="absolute top-1 right-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 w-6 p-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                            }}
-                          >
-                            {isFavorite ? (
-                              <Heart className="h-3 w-3 fill-primary text-primary" />
-                            ) : (
-                              <HeartOff className="h-3 w-3" />
-                            )}
-                          </Button>
-                        </div>
+                        {/* Favorite button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 right-1 h-6 w-6 p-0"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                          }}
+                        >
+                          {isFavorite ? (
+                            <Heart className="h-3 w-3 fill-primary text-primary" />
+                          ) : (
+                            <HeartOff className="h-3 w-3" />
+                          )}
+                        </Button>
                       </div>
                       
                       <div className="text-center space-y-2">
