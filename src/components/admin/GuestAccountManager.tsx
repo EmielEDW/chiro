@@ -114,32 +114,26 @@ const GuestAccountManager = () => {
         .from('adjustments')
         .insert({
           user_id: guestId,
-          delta_cents: -amount, // Negative to neutralize the negative balance
-          reason: `Afrekening gast account - ${guestName}`,
+          delta_cents: -amount, // Negative to neutralize the balance
+          reason: `Saldo vrijgeven gast account - ${guestName}`,
           created_by: (await supabase.auth.getUser()).data.user?.id
         });
       
       if (balanceError) throw balanceError;
       
-      // Free the guest account
-      const { data: freeData, error: freeError } = await supabase
-        .rpc('free_guest_account', { _guest_id: guestId });
-      
-      if (freeError) throw freeError;
-      
-      return { balance: balanceData, freed: freeData };
+      return { balance: balanceData };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['guest-balances'] });
       queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
       toast({
-        title: "Account afgerekend",
-        description: "Het gast account is succesvol afgerekend en weer vrijgegeven.",
+        title: "Saldo vrijgegeven",
+        description: "Het saldo is teruggebracht naar €0,00.",
       });
     },
     onError: (error: any) => {
       toast({
-        title: "Fout bij afrekenen",
+        title: "Fout bij vrijgeven saldo",
         description: error.message,
         variant: "destructive",
       });
@@ -211,10 +205,10 @@ const GuestAccountManager = () => {
   };
 
   const handleSettleAccount = (guestId: string, balance: number, guestName: string) => {
-    if (balance >= 0) {
+    if (balance === 0) {
       toast({
-        title: "Geen afrekening nodig",
-        description: "Dit account heeft geen negatief saldo.",
+        title: "Geen wijziging nodig",
+        description: "Dit account heeft al een saldo van €0,00.",
         variant: "destructive",
       });
       return;
@@ -319,7 +313,7 @@ const GuestAccountManager = () => {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {guest.occupied && balance < 0 && (
+                          {balance !== 0 && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -327,17 +321,7 @@ const GuestAccountManager = () => {
                               disabled={settleGuestAccount.isPending}
                             >
                               <CreditCard className="h-4 w-4 mr-1" />
-                              Afrekenen
-                            </Button>
-                          )}
-                          {guest.occupied && balance >= 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => freeGuestAccount.mutate(guest.id)}
-                              disabled={freeGuestAccount.isPending}
-                            >
-                              Vrijgeven
+                              Saldo vrijgeven
                             </Button>
                           )}
                           <AlertDialog>

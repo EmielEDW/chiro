@@ -13,7 +13,6 @@ import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
-import GuestLoginDialog from '@/components/GuestLoginDialog';
 import { Checkbox } from '@/components/ui/checkbox';
 
 const Auth = () => {
@@ -432,13 +431,6 @@ const Auth = () => {
                 </form>
               </TabsContent>
               </Tabs>
-              
-              <GuestLoginDialog 
-                onGuestSelect={(guestId, guestName) => {
-                  loginAsGuest(guestId, guestName);
-                  navigate('/');
-                }} 
-              />
             </>
           )}
 
