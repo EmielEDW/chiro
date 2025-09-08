@@ -27,6 +27,8 @@ const Auth = () => {
   const [newPassword2, setNewPassword2] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const [changeLoading, setChangeLoading] = useState(false);
+  const [guestName, setGuestName] = useState('');
+  const [guestLoading, setGuestLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -263,6 +265,43 @@ const Auth = () => {
     setChangeLoading(false);
   };
 
+  const handleGuestLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!guestName.trim()) {
+      toast({
+        title: "Naam vereist",
+        description: "Vul je naam in om als gast in te loggen.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGuestLoading(true);
+    try {
+      const { data: guestId, error } = await (supabase as any)
+        .rpc('create_temp_guest_account', { _guest_name: guestName.trim() });
+      
+      if (error) throw error;
+
+      toast({
+        title: "Gastaccount aangemaakt",
+        description: "Je wordt doorgestuurd naar je gastpagina.",
+      });
+
+      // Navigate to guest page
+      navigate(`/guest/${guestId}`);
+    } catch (error: any) {
+      console.error('Guest login error:', error);
+      toast({
+        title: "Fout",
+        description: error.message || "Er ging iets mis bij het aanmaken van je gastaccount.",
+        variant: "destructive",
+      });
+    } finally {
+      setGuestLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5 p-4">
       <Card className="w-full max-w-md">
@@ -313,9 +352,10 @@ const Auth = () => {
             </form>
           ) : (
             <Tabs defaultValue="signin" className="space-y-4">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Inloggen</TabsTrigger>
                 <TabsTrigger value="signup">Registreren</TabsTrigger>
+                <TabsTrigger value="guest">Gast</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin">
@@ -433,10 +473,34 @@ const Auth = () => {
                      {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                      Account aanmaken
                    </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-          )}
+                 </form>
+               </TabsContent>
+
+               <TabsContent value="guest">
+                 <form onSubmit={handleGuestLogin} className="space-y-4">
+                   <div className="space-y-2">
+                     <Label htmlFor="guest-name">Je naam</Label>
+                     <Input
+                       id="guest-name"
+                       type="text"
+                       value={guestName}
+                       onChange={(e) => setGuestName(e.target.value)}
+                       placeholder="Jouw naam"
+                       required
+                       maxLength={50}
+                     />
+                     <p className="text-xs text-muted-foreground">
+                       Als gast kun je dranken bestellen die later afgerekend worden.
+                     </p>
+                   </div>
+                   <Button type="submit" className="w-full" disabled={guestLoading}>
+                     {guestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                     Als gast inloggen
+                   </Button>
+                 </form>
+               </TabsContent>
+             </Tabs>
+           )}
 
         </CardContent>
       </Card>
