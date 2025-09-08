@@ -1,14 +1,13 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, QrCode, CreditCard, Trash2, DollarSign, Users } from 'lucide-react';
+import { Plus, QrCode, Trash2, DollarSign, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import QRCode from 'qrcode';
 
@@ -27,87 +26,100 @@ interface GuestAccount {
 
 const GuestTabManagement = () => {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [newGuestName, setNewGuestName] = useState('');
   const [isCreatingGuest, setIsCreatingGuest] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<{ name: string; url: string; balance: number } | null>(null);
 
-  const { data: guestAccounts = [], isLoading } = useQuery({
-    queryKey: ['guest-accounts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
+  // Fetch active guest accounts
+  const [guestAccounts, setGuestAccounts] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadGuestAccounts = async () => {
+    try {
+      const response: any = await supabase
         .from('profiles')
         .select('*')
         .eq('guest_account', true)
         .eq('active', true)
         .order('guest_number');
       
-      if (error) throw error;
+      if (response.error) throw response.error;
 
       // Get balances for all guests
       const accountsWithBalances = await Promise.all(
-        data.map(async (account) => {
-          const { data: balance, error: balanceError } = await supabase
+        (response.data as any[]).map(async (account: any) => {
+          const balanceResponse: any = await supabase
             .rpc('calculate_user_balance', { user_uuid: account.id });
           
           return {
             ...account,
-            balance: balanceError ? 0 : (balance || 0)
+            balance: balanceResponse.error ? 0 : (balanceResponse.data || 0)
           };
         })
       );
 
-      return accountsWithBalances;
-    },
-    refetchInterval: 10000, // Refresh every 10 seconds
-  });
+      setGuestAccounts(accountsWithBalances);
+    } catch (error) {
+      console.error('Error loading guest accounts:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const createGuestAccount = useMutation({
-    mutationFn: async (guestName: string) => {
+  // Load on mount and set up periodic refresh
+  useEffect(() => {
+    loadGuestAccounts();
+    const interval = setInterval(loadGuestAccounts, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const createGuestAccount = async (guestName: string) => {
+    try {
       const { data, error } = await supabase.functions.invoke('create-temp-guest', {
         body: { guest_name: guestName }
       });
       
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
+
+      loadGuestAccounts();
       setNewGuestName('');
       toast({
         title: "Gastaccount aangemaakt",
         description: "Nieuw gastaccount is succesvol aangemaakt.",
       });
-    },
-    onError: () => {
+    } catch (error) {
       toast({
         title: "Fout",
         description: "Er ging iets mis bij het aanmaken van het gastaccount.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  const settleGuestCash = useMutation({
-    mutationFn: async (guestId: string) => {
+  const settleGuestCash = async (guestId: string) => {
+    try {
       const { data, error } = await supabase.functions.invoke('admin-settle-guest', {
         body: { guest_id: guestId, method: 'cash' }
       });
       
       if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
+
+      loadGuestAccounts();
       toast({
         title: "Afgerekend",
         description: "Gastaccount is afgerekend met contant geld.",
       });
-    },
-  });
+    } catch (error) {
+      toast({
+        title: "Fout",
+        description: "Er ging iets mis bij het afrekenen.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const closeGuestTab = useMutation({
-    mutationFn: async (guestId: string) => {
+  const closeGuestTab = async (guestId: string) => {
+    try {
       const { error } = await supabase
         .from('profiles')
         .update({ 
@@ -118,18 +130,23 @@ const GuestTabManagement = () => {
         .eq('id', guestId);
       
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
+
+      loadGuestAccounts();
       toast({
         title: "Tab gesloten",
         description: "Gasttab is succesvol gesloten.",
       });
-    },
-  });
+    } catch (error) {
+      toast({
+        title: "Fout",
+        description: "Er ging iets mis bij het sluiten van de tab.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  const deleteGuestAccount = useMutation({
-    mutationFn: async (guestId: string) => {
+  const deleteGuestAccount = async (guestId: string) => {
+    try {
       // First check if there are any consumptions
       const { data: consumptions, error: consumptionsError } = await supabase
         .from('consumptions')
@@ -149,15 +166,13 @@ const GuestTabManagement = () => {
         .eq('id', guestId);
       
       if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
+
+      loadGuestAccounts();
       toast({
         title: "Account verwijderd",
         description: "Gastaccount is verwijderd.",
       });
-    },
-    onError: (error: Error) => {
+    } catch (error: any) {
       toast({
         title: "Kan niet verwijderen",
         description: error.message.includes('consumptions') 
@@ -165,8 +180,8 @@ const GuestTabManagement = () => {
           : "Er ging iets mis bij het verwijderen.",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
   const generateQRCode = async (guestId: string, guestName: string, balance: number) => {
     try {
@@ -191,7 +206,7 @@ const GuestTabManagement = () => {
     
     setIsCreatingGuest(true);
     try {
-      await createGuestAccount.mutateAsync(newGuestName.trim());
+      await createGuestAccount(newGuestName.trim());
     } finally {
       setIsCreatingGuest(false);
     }
@@ -201,8 +216,8 @@ const GuestTabManagement = () => {
     return <div>Laden...</div>;
   }
 
-  const occupiedGuests = guestAccounts.filter(account => account.occupied);
-  const availableGuests = guestAccounts.filter(account => !account.occupied);
+  const occupiedGuests = guestAccounts.filter((account: any) => account.occupied);
+  const availableGuests = guestAccounts.filter((account: any) => !account.occupied);
 
   return (
     <div className="space-y-6">
@@ -261,7 +276,7 @@ const GuestTabManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {occupiedGuests.map((guest) => (
+                {occupiedGuests.map((guest: any) => (
                   <TableRow key={guest.id}>
                     <TableCell>
                       <div>
@@ -291,7 +306,7 @@ const GuestTabManagement = () => {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => settleGuestCash.mutate(guest.id)}
+                            onClick={() => settleGuestCash(guest.id)}
                           >
                             <DollarSign className="h-3 w-3" />
                           </Button>
@@ -299,7 +314,7 @@ const GuestTabManagement = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => closeGuestTab.mutate(guest.id)}
+                          onClick={() => closeGuestTab(guest.id)}
                         >
                           Sluiten
                         </Button>
@@ -329,7 +344,7 @@ const GuestTabManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {availableGuests.map((guest) => (
+                {availableGuests.map((guest: any) => (
                   <TableRow key={guest.id}>
                     <TableCell>Gast #{guest.guest_number}</TableCell>
                     <TableCell>
@@ -341,7 +356,7 @@ const GuestTabManagement = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => deleteGuestAccount.mutate(guest.id)}
+                        onClick={() => deleteGuestAccount(guest.id)}
                       >
                         <Trash2 className="h-3 w-3" />
                       </Button>

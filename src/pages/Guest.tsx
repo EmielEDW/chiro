@@ -1,12 +1,11 @@
 import { useParams, Navigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CreditCard, User, QrCode } from 'lucide-react';
 import DrinkGrid from '@/components/DrinkGrid';
-import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 interface GuestProfile {
@@ -25,13 +24,15 @@ const Guest = () => {
   const { id } = useParams();
   const { toast } = useToast();
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [guestProfile, setGuestProfile] = useState<any>(null);
+  const [balance, setBalance] = useState(0);
+  const [profileLoading, setProfileLoading] = useState(true);
 
-  const { data: guestProfile, isLoading: profileLoading } = useQuery({
-    queryKey: ['guest-profile', id],
-    queryFn: async () => {
-      if (!id) throw new Error('No guest ID provided');
-      
-      const { data, error } = await supabase
+  const loadGuestProfile = async () => {
+    if (!id) return;
+    
+    try {
+      const response: any = await supabase
         .from('profiles')
         .select('*')
         .eq('id', id)
@@ -40,26 +41,43 @@ const Guest = () => {
         .eq('active', true)
         .single();
       
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!id,
-  });
+      if (response.error) throw response.error;
+      setGuestProfile(response.data);
+    } catch (error) {
+      console.error('Error loading guest profile:', error);
+      setGuestProfile(null);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
-  const { data: balance = 0, refetch: refetchBalance } = useQuery({
-    queryKey: ['guest-balance', id],
-    queryFn: async () => {
-      if (!id) return 0;
-      
-      const { data, error } = await supabase
+  const loadBalance = async () => {
+    if (!id) return;
+    
+    try {
+      const response: any = await supabase
         .rpc('calculate_user_balance', { user_uuid: id });
       
-      if (error) throw error;
-      return data as number;
-    },
-    enabled: !!id,
-    refetchInterval: 5000, // Refresh every 5 seconds
-  });
+      if (!response.error) {
+        setBalance(response.data || 0);
+      }
+    } catch (error) {
+      console.error('Error loading balance:', error);
+    }
+  };
+
+  const refetchBalance = () => {
+    loadBalance();
+  };
+
+  useEffect(() => {
+    loadGuestProfile();
+    loadBalance();
+    
+    // Set up balance refresh interval
+    const balanceInterval = setInterval(loadBalance, 5000);
+    return () => clearInterval(balanceInterval);
+  }, [id]);
 
   const handlePayment = async () => {
     if (!id || balance >= 0) return;
