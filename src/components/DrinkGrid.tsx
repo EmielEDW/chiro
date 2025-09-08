@@ -22,9 +22,11 @@ interface Item {
 interface DrinkGridProps {
   balance: number;
   onDrinkLogged: () => void;
+  isGuestMode?: boolean;
+  guestUserId?: string;
 }
 
-export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
+export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUserId }: DrinkGridProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -71,7 +73,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   const { data: favorites = [] } = useQuery({
     queryKey: ['favorites', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id || isGuestMode) return [];
       const { data, error } = await supabase
         .from('user_favorites')
         .select('item_id')
@@ -80,7 +82,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
       if (error) throw error;
       return data.map(f => f.item_id);
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !isGuestMode,
   });
 
   const toggleFavorite = useMutation({
@@ -111,6 +113,8 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   };
 
   const canAfford = (price: number) => {
+    // Voor gasten altijd toestaan (kunnen negatief gaan)
+    if (isGuestMode) return true;
     return balance >= price;
   };
 
@@ -183,7 +187,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
       return;
     }
     
-    if (!canAfford(item.price_cents)) {
+    if (!canAfford(item.price_cents) && !isGuestMode) {
       toast({
         title: "Onvoldoende saldo",
         description: "Je hebt niet genoeg saldo om dit drankje te kopen. Laad eerst je saldo op.",
@@ -195,6 +199,9 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     try {
       const clientId = `${Date.now()}-${Math.random()}`;
       
+      // Voor gasten gebruik guestUserId, anders auth user
+      const userId = isGuestMode ? guestUserId : (await supabase.auth.getUser()).data.user?.id;
+      
       const { error } = await supabase
         .from('consumptions')
         .insert({
@@ -202,7 +209,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
           price_cents: item.price_cents,
           source: 'tap',
           client_id: clientId,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
         });
 
       if (error) throw error;
@@ -269,7 +276,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
   return (
     <div className="space-y-6">
       {/* Favorites section at the top */}
-      {favoriteItems.length > 0 && (
+      {favoriteItems.length > 0 && !isGuestMode && (
         <div className="space-y-4" data-category="favorites">
           <div className="flex items-center gap-2">
             <Heart className="h-5 w-5 text-primary fill-primary" />
@@ -311,18 +318,20 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                        {/* Favorite button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                          }}
-                        >
-                          <Heart className="h-3 w-3 fill-primary text-primary" />
-                        </Button>
+                        {/* Favorite button - alleen voor niet-gasten */}
+                        {!isGuestMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                            }}
+                          >
+                            <Heart className="h-3 w-3 fill-primary text-primary" />
+                          </Button>
+                        )}
                       </div>
                       
                       <div className="text-center space-y-2">
@@ -415,22 +424,24 @@ export const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
                           </div>
                         )}
                         
-                        {/* Favorite button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-1 right-1 h-6 w-6 p-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleFavorite.mutate({ itemId: item.id, isFavorite });
-                          }}
-                        >
-                          {isFavorite ? (
-                            <Heart className="h-3 w-3 fill-primary text-primary" />
-                          ) : (
-                            <HeartOff className="h-3 w-3" />
-                          )}
-                        </Button>
+                        {/* Favorite button - alleen voor niet-gasten */}
+                        {!isGuestMode && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite.mutate({ itemId: item.id, isFavorite });
+                            }}
+                          >
+                            {isFavorite ? (
+                              <Heart className="h-3 w-3 fill-primary text-primary" />
+                            ) : (
+                              <HeartOff className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
                       </div>
                       
                       <div className="text-center space-y-2">

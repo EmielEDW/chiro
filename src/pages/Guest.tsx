@@ -172,6 +172,8 @@ const Guest = () => {
             onDrinkLogged={() => {
               refetchBalance();
             }}
+            isGuestMode={true}
+            guestUserId={id}
           />
         </div>
 
