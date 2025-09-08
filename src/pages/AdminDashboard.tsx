@@ -23,6 +23,7 @@ import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
+import GuestTabManagement from '@/components/admin/GuestTabManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -103,7 +104,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview" className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4" />
               Overzicht
@@ -111,6 +112,10 @@ const AdminDashboard = () => {
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Gebruikers
+            </TabsTrigger>
+            <TabsTrigger value="guests" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Gasttabs
             </TabsTrigger>
             <TabsTrigger value="stock" className="flex items-center gap-2">
               <Package className="h-4 w-4" />
@@ -128,6 +133,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="users">
             <UserManagement />
+          </TabsContent>
+
+          <TabsContent value="guests">
+            <GuestTabManagement />
           </TabsContent>
           
           <TabsContent value="stock">
