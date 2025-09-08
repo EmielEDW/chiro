@@ -224,7 +224,7 @@ const Guest = () => {
               <div className="space-y-3 p-4 bg-muted rounded-lg">
                 <div>
                   <p className="font-semibold">Betaal naar:</p>
-                  <p className="text-sm">BE12 3456 7890 1234</p>
+                  <p className="text-sm">BE52 0637 7145 7809</p>
                 </div>
                 <div>
                   <p className="font-semibold">Mededeling:</p>
