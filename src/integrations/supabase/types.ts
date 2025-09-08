@@ -291,8 +291,12 @@ export type Database = {
           chiro_role: string | null
           created_at: string
           email: string
+          guest_account: boolean
+          guest_number: number | null
           id: string
           name: string
+          occupied: boolean
+          occupied_by_name: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           username: string | null
@@ -304,8 +308,12 @@ export type Database = {
           chiro_role?: string | null
           created_at?: string
           email: string
+          guest_account?: boolean
+          guest_number?: number | null
           id: string
           name: string
+          occupied?: boolean
+          occupied_by_name?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string | null
@@ -317,8 +325,12 @@ export type Database = {
           chiro_role?: string | null
           created_at?: string
           email?: string
+          guest_account?: boolean
+          guest_number?: number | null
           id?: string
           name?: string
+          occupied?: boolean
+          occupied_by_name?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string | null
@@ -434,6 +446,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_archived: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_favorites: {
         Row: {
           created_at: string
@@ -483,6 +516,14 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: number
       }
+      create_temp_guest_account: {
+        Args: { _guest_name: string }
+        Returns: string
+      }
+      free_guest_account: {
+        Args: { _guest_id: string }
+        Returns: boolean
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -492,6 +533,10 @@ export type Database = {
           _new_role: Database["public"]["Enums"]["user_role"]
           _target_user_id: string
         }
+        Returns: boolean
+      }
+      occupy_guest_account: {
+        Args: { _guest_id: string; _guest_name: string }
         Returns: boolean
       }
     }
@@ -504,6 +549,7 @@ export type Database = {
         | "mixed_drinks"
         | "andere"
         | "sterke_dranken"
+        | "cocktails"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -641,6 +687,7 @@ export const Constants = {
         "mixed_drinks",
         "andere",
         "sterke_dranken",
+        "cocktails",
       ],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],

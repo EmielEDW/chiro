@@ -142,22 +142,27 @@ const Guest = () => {
           </CardHeader>
         </Card>
 
-        {/* Payment section - only show if balance is negative */}
-        {balance < 0 && (
+        {/* Payment section - always show for debugging, later only show if balance is negative */}
+        {(balance < 0 || true) && (
           <Card className="border-amber-200 bg-amber-50/50">
             <CardContent className="p-4">
               <div className="text-center space-y-3">
                 <h3 className="font-semibold text-amber-800">Rekening afrekenen</h3>
                 <p className="text-sm text-amber-700">
-                  Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong>
+                  {balance < 0 ? (
+                    <>Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong></>
+                  ) : (
+                    <>Huidig saldo: <strong>{formatCurrency(balance)}</strong> - Bestel drankjes om je schuld op te bouwen</>
+                  )}
                 </p>
                 <Button 
                   onClick={handleShowPayment}
                   className="w-full"
                   size="lg"
+                  disabled={balance >= 0}
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
-                  Bekijk betaalgegevens
+                  {balance < 0 ? 'Bekijk betaalgegevens' : 'Nog geen schuld om af te betalen'}
                 </Button>
               </div>
             </CardContent>
@@ -201,7 +206,7 @@ const Guest = () => {
             <div className="space-y-4">
               <div className="text-center">
                 <p className="text-lg font-semibold text-destructive">
-                  Te betalen: {formatCurrency(Math.abs(balance))}
+                  Te betalen: {balance < 0 ? formatCurrency(Math.abs(balance)) : '€0.00'}
                 </p>
               </div>
               <div className="space-y-3 p-4 bg-muted rounded-lg">
