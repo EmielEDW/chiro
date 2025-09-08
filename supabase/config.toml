@@ -1,13 +1,1 @@
 project_id = "fslqlkqjechlvvziaydj"
-
-[functions.create-temp-guest]
-verify_jwt = true
-
-[functions.create-guest-payment]
-verify_jwt = false
-
-[functions.admin-settle-guest]
-verify_jwt = true
-
-[functions.verify-payment]
-verify_jwt = false

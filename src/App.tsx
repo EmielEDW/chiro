@@ -11,7 +11,6 @@ import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PaymentCancelled from "./pages/PaymentCancelled";
 import AdminDashboard from "./pages/AdminDashboard";
-import Guest from "./pages/Guest";
 
 import History from "./pages/History";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -27,7 +26,6 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/guest/:id" element={<Guest />} />
             <Route path="/payment-success" element={
               <ProtectedRoute>
                 <PaymentSuccess />
