@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 interface GuestLoginDialogProps {
   onGuestSelect: (guestId: string, guestName: string) => void;
@@ -14,26 +15,37 @@ const GuestLoginDialog = ({ onGuestSelect }: GuestLoginDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleConfirmLogin = async () => {
+  const handleLogin = async () => {
     if (!guestName.trim()) return;
 
     setIsLoading(true);
     try {
-      // Create temporary guest account
+      // Create a new temporary guest account
       const { data: guestId, error } = await supabase
         .rpc('create_temp_guest_account', { 
           _guest_name: guestName.trim() 
         });
 
       if (error) throw error;
-      if (!guestId) throw new Error('Gastaccount kon niet worden aangemaakt');
+      if (!guestId) throw new Error('Temp account kon niet worden aangemaakt');
 
       onGuestSelect(guestId, guestName.trim());
       setIsOpen(false);
       setGuestName('');
+      
+      toast({
+        title: "Welkom!",
+        description: `Je bent ingelogd als ${guestName.trim()}. Je account is tijdelijk en wordt beheerd door de admin.`,
+      });
     } catch (error) {
-      console.error('Error creating guest account:', error);
+      console.error('Error creating temp guest account:', error);
+      toast({
+        title: "Fout",
+        description: "Er ging iets mis bij het aanmaken van je gastaccount. Probeer opnieuw.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +67,7 @@ const GuestLoginDialog = ({ onGuestSelect }: GuestLoginDialogProps) => {
         <div className="space-y-4">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
-              Voer je naam in om als gast in te loggen. Er wordt automatisch een tijdelijk account aangemaakt.
+              Voer je naam in om een tijdelijk gastaccount aan te maken. Je kunt drankjes kopen en in de min gaan.
             </p>
             <div>
               <Label htmlFor="guest-name">Je naam</Label>
@@ -64,20 +76,20 @@ const GuestLoginDialog = ({ onGuestSelect }: GuestLoginDialogProps) => {
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 placeholder="Voer je naam in"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && guestName.trim()) {
-                    handleConfirmLogin();
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && guestName.trim() && !isLoading) {
+                    handleLogin();
                   }
                 }}
               />
             </div>
           </div>
           <Button 
-            onClick={handleConfirmLogin}
+            onClick={handleLogin}
             disabled={!guestName.trim() || isLoading}
             className="w-full"
           >
-            {isLoading ? 'Account aanmaken...' : 'Inloggen als Gast'}
+            {isLoading ? 'Bezig...' : 'Tijdelijk Account Aanmaken'}
           </Button>
         </div>
       </DialogContent>

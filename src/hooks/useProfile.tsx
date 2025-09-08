@@ -31,8 +31,19 @@ export const useProfile = () => {
     queryFn: async () => {
       if (!currentUserId) return null;
       
-      // For guest users, create a mock profile
+      // For guest users, try to get their actual profile from the database
       if (guestUser) {
+        const { data: guestProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', guestUser.id)
+          .single();
+        
+        if (guestProfile && !error) {
+          return guestProfile as Profile;
+        }
+        
+        // Fallback to mock profile if not found
         return {
           id: guestUser.id,
           name: guestUser.name,
