@@ -73,11 +73,42 @@ const GuestTabManagement = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Test function to check if the database function exists
+  const testDatabaseFunction = async () => {
+    try {
+      const { data, error } = await (supabase as any)
+        .rpc('create_temp_guest_account', { _guest_name: 'Test User' });
+      
+      console.log('Database function test result:', { data, error });
+      
+      if (error) {
+        console.error('Database function error:', error);
+        toast({
+          title: "Database Function Error",
+          description: `Database function failed: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Database function works, guest ID:', data);
+      }
+    } catch (err) {
+      console.error('Database function test failed:', err);
+    }
+  };
+
+  // Add test button to check database function (temporary for debugging)
+  const handleTestFunction = () => {
+    testDatabaseFunction();
+  };
+
   const createGuestAccount = async (guestName: string) => {
     try {
+      console.log('Creating guest account for:', guestName);
       const { data, error } = await (supabase as any).functions.invoke('create-temp-guest', {
         body: { guest_name: guestName }
       });
+      
+      console.log('Edge function response:', { data, error });
       
       if (error) throw error;
 
@@ -88,9 +119,10 @@ const GuestTabManagement = () => {
         description: "Nieuw gastaccount is succesvol aangemaakt.",
       });
     } catch (error) {
+      console.error('Create guest account error:', error);
       toast({
         title: "Fout",
-        description: "Er ging iets mis bij het aanmaken van het gastaccount.",
+        description: `Er ging iets mis bij het aanmaken van het gastaccount: ${error.message || error}`,
         variant: "destructive",
       });
     }
@@ -241,12 +273,19 @@ const GuestTabManagement = () => {
                 disabled={isCreatingGuest}
               />
             </div>
-            <div className="flex items-end">
+            <div className="flex items-end gap-2">
               <Button 
                 onClick={handleCreateGuest}
                 disabled={!newGuestName.trim() || isCreatingGuest}
               >
                 {isCreatingGuest ? 'Bezig...' : 'Aanmaken'}
+              </Button>
+              <Button 
+                onClick={handleTestFunction}
+                variant="outline"
+                size="sm"
+              >
+                Test DB
               </Button>
             </div>
           </div>
