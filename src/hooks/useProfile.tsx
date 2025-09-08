@@ -33,16 +33,21 @@ export const useProfile = () => {
       
       // For guest users, try to get their actual profile from the database
       if (guestUser) {
+        console.log('Fetching guest profile for ID:', guestUser.id);
         const { data: guestProfile, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', guestUser.id)
-          .single();
+          .maybeSingle();
+        
+        console.log('Guest profile fetch result:', { guestProfile, error });
         
         if (guestProfile && !error) {
+          console.log('Using real guest profile from database');
           return guestProfile as Profile;
         }
         
+        console.log('Using fallback mock profile for guest');
         // Fallback to mock profile if not found
         return {
           id: guestUser.id,

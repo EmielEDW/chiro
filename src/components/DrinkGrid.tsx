@@ -254,7 +254,9 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
     try {
       const clientId = `${Date.now()}-${Math.random()}`;
       
-      if (!user?.id) {
+      const currentUserId = user?.id || profile?.id;
+      
+      if (!currentUserId) {
         toast({
           title: "Niet ingelogd",
           description: "Log opnieuw in en probeer het nog eens.",
@@ -269,7 +271,7 @@ const DrinkGrid = ({ balance, onDrinkLogged }: DrinkGridProps) => {
           price_cents: item.price_cents,
           source: 'tap',
           client_id: clientId,
-          user_id: user.id,
+          user_id: currentUserId,
         });
 
       if (error) throw error;
