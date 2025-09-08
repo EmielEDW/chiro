@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CreditCard, User, QrCode, LogOut } from 'lucide-react';
 import DrinkGrid from '@/components/DrinkGrid';
+import GuestHistory from '@/components/GuestHistory';
 import { useToast } from '@/hooks/use-toast';
 
 interface GuestProfile {
@@ -193,6 +194,12 @@ const Guest = () => {
             guestUserId={id}
           />
         </div>
+
+        {/* Guest History */}
+        <GuestHistory 
+          guestUserId={id || ''}
+          onBalanceChange={refetchBalance}
+        />
 
         {/* Footer */}
         <Card className="border-muted">
