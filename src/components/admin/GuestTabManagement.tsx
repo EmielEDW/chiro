@@ -36,7 +36,7 @@ const GuestTabManagement = () => {
 
   const loadGuestAccounts = async () => {
     try {
-      const response: any = await supabase
+      const response = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('guest_account', true)
@@ -48,7 +48,7 @@ const GuestTabManagement = () => {
       // Get balances for all guests
       const accountsWithBalances = await Promise.all(
         (response.data as any[]).map(async (account: any) => {
-          const balanceResponse: any = await supabase
+          const balanceResponse = await (supabase as any)
             .rpc('calculate_user_balance', { user_uuid: account.id });
           
           return {
@@ -75,7 +75,7 @@ const GuestTabManagement = () => {
 
   const createGuestAccount = async (guestName: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('create-temp-guest', {
+      const { data, error } = await (supabase as any).functions.invoke('create-temp-guest', {
         body: { guest_name: guestName }
       });
       
@@ -98,7 +98,7 @@ const GuestTabManagement = () => {
 
   const settleGuestCash = async (guestId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('admin-settle-guest', {
+      const { data, error } = await (supabase as any).functions.invoke('admin-settle-guest', {
         body: { guest_id: guestId, method: 'cash' }
       });
       
@@ -120,7 +120,7 @@ const GuestTabManagement = () => {
 
   const closeGuestTab = async (guestId: string) => {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .update({ 
           occupied: false, 
@@ -148,7 +148,7 @@ const GuestTabManagement = () => {
   const deleteGuestAccount = async (guestId: string) => {
     try {
       // First check if there are any consumptions
-      const { data: consumptions, error: consumptionsError } = await supabase
+      const { data: consumptions, error: consumptionsError } = await (supabase as any)
         .from('consumptions')
         .select('id')
         .eq('user_id', guestId)
@@ -160,7 +160,7 @@ const GuestTabManagement = () => {
         throw new Error('Cannot delete guest account with existing consumptions');
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('profiles')
         .delete()
         .eq('id', guestId);

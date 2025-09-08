@@ -32,7 +32,7 @@ const Guest = () => {
     if (!id) return;
     
     try {
-      const response: any = await supabase
+      const response = await (supabase as any)
         .from('profiles')
         .select('*')
         .eq('id', id)
@@ -55,7 +55,7 @@ const Guest = () => {
     if (!id) return;
     
     try {
-      const response: any = await supabase
+      const response = await (supabase as any)
         .rpc('calculate_user_balance', { user_uuid: id });
       
       if (!response.error) {
@@ -84,7 +84,7 @@ const Guest = () => {
     
     setIsProcessingPayment(true);
     try {
-      const { data, error } = await supabase.functions.invoke('create-guest-payment', {
+      const { data, error } = await (supabase as any).functions.invoke('create-guest-payment', {
         body: { guest_id: id }
       });
 
