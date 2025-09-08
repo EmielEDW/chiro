@@ -516,6 +516,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: number
       }
+      create_temp_guest_account: {
+        Args: { _guest_name: string }
+        Returns: string
+      }
       free_guest_account: {
         Args: { _guest_id: string }
         Returns: boolean
