@@ -82,7 +82,6 @@ const Guest = () => {
   }, [id]);
 
   const handleShowPayment = () => {
-    if (balance >= 0) return;
     setShowPaymentDialog(true);
   };
 
@@ -142,32 +141,45 @@ const Guest = () => {
           </CardHeader>
         </Card>
 
-        {/* Payment section - always show for debugging, later only show if balance is negative */}
-        {(balance < 0 || true) && (
-          <Card className="border-amber-200 bg-amber-50/50">
-            <CardContent className="p-4">
-              <div className="text-center space-y-3">
-                <h3 className="font-semibold text-amber-800">Rekening afrekenen</h3>
-                <p className="text-sm text-amber-700">
-                  {balance < 0 ? (
-                    <>Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong></>
-                  ) : (
-                    <>Huidig saldo: <strong>{formatCurrency(balance)}</strong> - Bestel drankjes om je schuld op te bouwen</>
-                  )}
-                </p>
-                <Button 
-                  onClick={handleShowPayment}
-                  className="w-full"
-                  size="lg"
-                  disabled={balance >= 0}
-                >
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  {balance < 0 ? 'Bekijk betaalgegevens' : 'Nog geen schuld om af te betalen'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Payment section - altijd tonen voor gasten */}
+        <Card className="border-amber-200 bg-amber-50/50">
+          <CardContent className="p-4">
+            <div className="text-center space-y-3">
+              {balance < 0 ? (
+                <>
+                  <h3 className="font-semibold text-amber-800">Rekening afrekenen</h3>
+                  <p className="text-sm text-amber-700">
+                    Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong>
+                  </p>
+                  <Button 
+                    onClick={handleShowPayment}
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Bekijk betaalgegevens
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-semibold text-green-800">Nog geen schuld</h3>
+                  <p className="text-sm text-green-700">
+                    Huidig saldo: <strong>{formatCurrency(balance)}</strong> - Bestel drankjes om je schuld op te bouwen
+                  </p>
+                  <Button 
+                    onClick={handleShowPayment}
+                    variant="outline"
+                    className="w-full"
+                    size="lg"
+                  >
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Bekijk betaalinfo
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Drink Grid */}
         <div className="space-y-4">
