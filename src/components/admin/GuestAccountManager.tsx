@@ -171,6 +171,28 @@ const GuestAccountManager = () => {
     },
   });
 
+  const freeGuestAccount = useMutation({
+    mutationFn: async (guestId: string) => {
+      const { data, error } = await supabase.rpc('free_guest_account', { _guest_id: guestId });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['guest-accounts'] });
+      toast({
+        title: "Gast account vrijgegeven",
+        description: "Het account is weer beschikbaar.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Fout bij vrijgeven",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
   };
@@ -308,7 +330,16 @@ const GuestAccountManager = () => {
                               Afrekenen
                             </Button>
                           )}
-                          
+                          {guest.occupied && balance >= 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => freeGuestAccount.mutate(guest.id)}
+                              disabled={freeGuestAccount.isPending}
+                            >
+                              Vrijgeven
+                            </Button>
+                          )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="sm">
