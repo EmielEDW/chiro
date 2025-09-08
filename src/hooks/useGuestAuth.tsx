@@ -53,9 +53,14 @@ export const GuestAuthProvider = ({ children }: GuestAuthProviderProps) => {
     
     setGuestUser(guest);
     localStorage.setItem('guestSession', JSON.stringify(guest));
+    localStorage.setItem('lastGuest', JSON.stringify({ id: guestId, name: guestName }));
   };
 
   const logoutGuest = () => {
+    // Preserve last used guest so user can re-login easily
+    if (guestUser) {
+      localStorage.setItem('lastGuest', JSON.stringify({ id: guestUser.id, name: guestUser.name }));
+    }
     setGuestUser(null);
     localStorage.removeItem('guestSession');
   };

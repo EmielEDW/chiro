@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,31 @@ const GuestLoginDialog = ({ onGuestSelect }: GuestLoginDialogProps) => {
   const [guestName, setGuestName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [lastGuest, setLastGuest] = useState<{ id: string; display: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const raw = localStorage.getItem('lastGuest');
+    if (!raw) return;
+    try {
+      const saved = JSON.parse(raw) as { id: string; name: string };
+      (async () => {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, name, occupied, guest_account, occupied_by_name, guest_number')
+          .eq('id', saved.id)
+          .maybeSingle();
+        if (!error && data && data.guest_account && data.occupied) {
+          const display = `${data.name}${data.occupied_by_name ? ` – ${data.occupied_by_name}` : ''}`;
+          setLastGuest({ id: data.id, display, name: data.occupied_by_name || saved.name });
+        } else {
+          setLastGuest(null);
+        }
+      })();
+    } catch (e) {
+      setLastGuest(null);
+    }
+  }, [isOpen]);
 
   const handleLogin = async () => {
     if (!guestName.trim()) return;
@@ -62,9 +87,39 @@ const GuestLoginDialog = ({ onGuestSelect }: GuestLoginDialogProps) => {
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Inloggen als Gast</DialogTitle>
+          <DialogDescription>
+            Maak snel een tijdelijk account aan of log terug in op je vorige gastaccount.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">
+          {lastGuest && (
+            <div className="rounded-md border p-3 bg-muted/30">
+              <p className="text-sm font-medium">Ben jij dit?</p>
+              <p className="text-sm text-muted-foreground mb-2">{lastGuest.display}</p>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={() => {
+                    onGuestSelect(lastGuest.id, lastGuest.name);
+                    setIsOpen(false);
+                  }}
+                  className="flex-1"
+                >
+                  Ja, log mij in
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    localStorage.removeItem('lastGuest');
+                    setLastGuest(null);
+                  }}
+                  className="flex-1"
+                >
+                  Nee
+                </Button>
+              </div>
+            </div>
+          )}
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
               Voer je naam in om een tijdelijk gastaccount aan te maken. Je kunt drankjes kopen en in de min gaan.
