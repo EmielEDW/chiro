@@ -1,10 +1,11 @@
-import { useParams, Navigate } from 'react-router-dom';
+import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CreditCard, User, QrCode } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CreditCard, User, QrCode, LogOut } from 'lucide-react';
 import DrinkGrid from '@/components/DrinkGrid';
 import { useToast } from '@/hooks/use-toast';
 
@@ -22,8 +23,9 @@ interface GuestProfile {
 
 const Guest = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [guestProfile, setGuestProfile] = useState<any>(null);
   const [balance, setBalance] = useState(0);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -79,31 +81,13 @@ const Guest = () => {
     return () => clearInterval(balanceInterval);
   }, [id]);
 
-  const handlePayment = async () => {
-    if (!id || balance >= 0) return;
-    
-    setIsProcessingPayment(true);
-    try {
-      const { data, error } = await (supabase as any).functions.invoke('create-guest-payment', {
-        body: { guest_id: id }
-      });
+  const handleShowPayment = () => {
+    if (balance >= 0) return;
+    setShowPaymentDialog(true);
+  };
 
-      if (error) throw error;
-
-      // Open Stripe checkout in new tab
-      if (data.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast({
-        title: "Fout bij betaling",
-        description: "Er ging iets mis bij het openen van de betaling. Probeer opnieuw.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessingPayment(false);
-    }
+  const handleLogout = () => {
+    navigate('/auth');
   };
 
   const formatCurrency = (cents: number) => {
@@ -132,9 +116,14 @@ const Guest = () => {
         {/* Header */}
         <Card className="border-primary/20">
           <CardHeader className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <User className="h-6 w-6 text-primary" />
-              <CardTitle className="text-xl">Gasttabblad</CardTitle>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <User className="h-6 w-6 text-primary" />
+                <CardTitle className="text-xl">Gasttabblad</CardTitle>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
             <div className="space-y-2">
               <Badge variant="outline" className="text-lg px-4 py-2">
@@ -163,13 +152,12 @@ const Guest = () => {
                   Je hebt een openstaand bedrag van <strong>{formatCurrency(Math.abs(balance))}</strong>
                 </p>
                 <Button 
-                  onClick={handlePayment}
-                  disabled={isProcessingPayment}
+                  onClick={handleShowPayment}
                   className="w-full"
                   size="lg"
                 >
                   <CreditCard className="mr-2 h-4 w-4" />
-                  {isProcessingPayment ? 'Bezig...' : 'Betaal nu'}
+                  Bekijk betaalgegevens
                 </Button>
               </div>
             </CardContent>
@@ -201,6 +189,37 @@ const Guest = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Payment Dialog */}
+        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Betaalgegevens</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-destructive">
+                  Te betalen: {formatCurrency(Math.abs(balance))}
+                </p>
+              </div>
+              <div className="space-y-3 p-4 bg-muted rounded-lg">
+                <div>
+                  <p className="font-semibold">Betaal naar:</p>
+                  <p className="text-sm">BE12 3456 7890 1234</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Mededeling:</p>
+                  <p className="text-sm font-mono bg-background px-2 py-1 rounded border">
+                    Gastaccount: {guestProfile?.occupied_by_name || guestProfile?.name} (#{guestProfile?.guest_number})
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                Gebruik exact deze mededeling zodat je betaling juist verwerkt wordt.
+              </p>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

@@ -350,11 +350,11 @@ const GuestTabManagement = () => {
                           </Button>
                         )}
                         <Button
-                          variant="outline"
+                          variant="destructive"
                           size="sm"
                           onClick={() => closeGuestTab(guest.id)}
                         >
-                          Sluiten
+                          Account Afsluiten
                         </Button>
                       </div>
                     </TableCell>

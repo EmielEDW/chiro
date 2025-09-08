@@ -29,6 +29,8 @@ const Auth = () => {
   const [changeLoading, setChangeLoading] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [guestLoading, setGuestLoading] = useState(false);
+  const [existingGuests, setExistingGuests] = useState<any[]>([]);
+  const [loadingGuests, setLoadingGuests] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -265,6 +267,36 @@ const Auth = () => {
     setChangeLoading(false);
   };
 
+  const loadExistingGuests = async () => {
+    setLoadingGuests(true);
+    try {
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('guest_account', true)
+        .eq('occupied', true)
+        .eq('active', true)
+        .order('guest_number');
+      
+      if (error) throw error;
+      
+      // Calculate balances for existing guests
+      const guestsWithBalances = await Promise.all(
+        (data || []).map(async (guest: any) => {
+          const { data: balance } = await (supabase as any)
+            .rpc('calculate_user_balance', { user_uuid: guest.id });
+          return { ...guest, balance: balance || 0 };
+        })
+      );
+      
+      setExistingGuests(guestsWithBalances);
+    } catch (error) {
+      console.error('Error loading existing guests:', error);
+    } finally {
+      setLoadingGuests(false);
+    }
+  };
+
   const handleGuestLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!guestName.trim()) {
@@ -288,7 +320,6 @@ const Auth = () => {
         description: "Je wordt doorgestuurd naar je gastpagina.",
       });
 
-      // Navigate to guest page
       navigate(`/guest/${guestId}`);
     } catch (error: any) {
       console.error('Guest login error:', error);
@@ -300,6 +331,14 @@ const Auth = () => {
     } finally {
       setGuestLoading(false);
     }
+  };
+
+  const handleExistingGuestLogin = (guestId: string) => {
+    navigate(`/guest/${guestId}`);
+  };
+
+  const formatCurrency = (cents: number) => {
+    return `€${(cents / 100).toFixed(2)}`;
   };
 
   return (
@@ -476,28 +515,73 @@ const Auth = () => {
                  </form>
                </TabsContent>
 
-               <TabsContent value="guest">
-                 <form onSubmit={handleGuestLogin} className="space-y-4">
-                   <div className="space-y-2">
-                     <Label htmlFor="guest-name">Je naam</Label>
-                     <Input
-                       id="guest-name"
-                       type="text"
-                       value={guestName}
-                       onChange={(e) => setGuestName(e.target.value)}
-                       placeholder="Jouw naam"
-                       required
-                       maxLength={50}
-                     />
-                     <p className="text-xs text-muted-foreground">
-                       Als gast kun je dranken bestellen die later afgerekend worden.
-                     </p>
+               <TabsContent value="guest" className="space-y-4">
+                 {/* Existing Guest Accounts */}
+                 <div className="space-y-3">
+                   <div className="flex justify-between items-center">
+                     <Label className="text-sm font-medium">Bestaande gastaccounts</Label>
+                     <Button 
+                       variant="outline" 
+                       size="sm" 
+                       onClick={loadExistingGuests}
+                       disabled={loadingGuests}
+                     >
+                       {loadingGuests ? <Loader2 className="h-3 w-3 animate-spin" /> : "Ververs"}
+                     </Button>
                    </div>
-                   <Button type="submit" className="w-full" disabled={guestLoading}>
-                     {guestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                     Als gast inloggen
-                   </Button>
-                 </form>
+                   
+                   {existingGuests.length > 0 ? (
+                     <div className="space-y-2 max-h-48 overflow-y-auto">
+                       {existingGuests.map((guest) => (
+                         <div key={guest.id} className="flex items-center justify-between p-3 border rounded-lg">
+                           <div>
+                             <p className="font-medium">{guest.occupied_by_name}</p>
+                             <p className="text-sm text-muted-foreground">
+                               Saldo: <span className={guest.balance < 0 ? "text-destructive font-medium" : ""}>
+                                 {formatCurrency(guest.balance)}
+                               </span>
+                             </p>
+                           </div>
+                           <Button 
+                             size="sm" 
+                             onClick={() => handleExistingGuestLogin(guest.id)}
+                           >
+                             Inloggen
+                           </Button>
+                         </div>
+                       ))}
+                     </div>
+                   ) : (
+                     <p className="text-sm text-muted-foreground text-center py-4">
+                       Geen openstaande gastaccounts gevonden
+                     </p>
+                   )}
+                 </div>
+
+                 {/* Create New Guest Account */}
+                 <div className="border-t pt-4">
+                   <form onSubmit={handleGuestLogin} className="space-y-4">
+                     <div className="space-y-2">
+                       <Label htmlFor="guest-name">Nieuw gastaccount aanmaken</Label>
+                       <Input
+                         id="guest-name"
+                         type="text"
+                         value={guestName}
+                         onChange={(e) => setGuestName(e.target.value)}
+                         placeholder="Jouw naam"
+                         required
+                         maxLength={50}
+                       />
+                       <p className="text-xs text-muted-foreground">
+                         Als gast kun je dranken bestellen die later afgerekend worden.
+                       </p>
+                     </div>
+                     <Button type="submit" className="w-full" disabled={guestLoading}>
+                       {guestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                       Nieuw gastaccount maken
+                     </Button>
+                   </form>
+                 </div>
                </TabsContent>
              </Tabs>
            )}
