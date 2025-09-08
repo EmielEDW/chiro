@@ -168,9 +168,7 @@ export const GuestHistory = ({ guestUserId, onBalanceChange }: GuestHistoryProps
     return isAfter(transactionTime, fourHoursAgo);
   };
 
-  if (historyItems.length === 0 && !isLoading) {
-    return null; // Don't show empty history section
-  }
+  // Always show history section for guests so they know the functionality exists
 
   return (
     <Card>
