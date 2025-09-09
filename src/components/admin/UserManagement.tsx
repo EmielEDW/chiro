@@ -28,6 +28,9 @@ interface Profile {
   role: string;
   active: boolean;
   created_at: string;
+  guest_account: boolean;
+  occupied_by_name?: string;
+  guest_number?: number;
 }
 
 const UserManagement = () => {
@@ -77,42 +80,58 @@ const UserManagement = () => {
     return `€${(cents / 100).toFixed(2)}`;
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
+  const handleDeleteUser = async (userId: string, userName: string, isGuest: boolean) => {
     try {
-      // Call edge function to delete user from auth.users and profiles
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        throw new Error('Not authenticated');
-      }
+      if (isGuest) {
+        // For guest accounts, just delete the profile record
+        // Consumptions and other data are preserved for statistics
+        const { error } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (error) throw error;
 
-      const response = await fetch(
-        `https://fslqlkqjechlvvziaydj.supabase.co/functions/v1/delete-user`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({ userId }),
+        toast({
+          title: "Gastaccount verwijderd",
+          description: `${userName} is verwijderd. Alle transacties blijven bewaard voor statistieken.`,
+        });
+      } else {
+        // For regular users, call edge function to delete from auth.users and profiles  
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('Not authenticated');
         }
-      );
 
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to delete user');
+        const response = await fetch(
+          `https://fslqlkqjechlvvziaydj.supabase.co/functions/v1/delete-user`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ userId }),
+          }
+        );
+
+        const result = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to delete user');
+        }
+
+        toast({
+          title: "Gebruiker verwijderd",
+          description: `${userName} is volledig verwijderd. De gebruiker kan nu opnieuw registreren met hetzelfde email adres.`,
+        });
       }
-
-      toast({
-        title: "Gebruiker verwijderd",
-        description: `${userName} is volledig verwijderd. De gebruiker kan nu opnieuw registreren met hetzelfde email adres.`,
-      });
 
       // Refresh the users list
       window.location.reload();
     } catch (error: any) {
       toast({
-        title: "Fout bij verwijderen",
+        title: "Fout bij verwijderen", 
         description: error.message || "Er ging iets mis bij het verwijderen van de gebruiker.",
         variant: "destructive",
       });
@@ -163,9 +182,22 @@ const UserManagement = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-medium">{user.name}</div>
+                      <div className="font-medium">
+                        {user.guest_account && user.occupied_by_name 
+                          ? `${user.occupied_by_name} (${user.name})`
+                          : user.name
+                        }
+                        {user.guest_account && (
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            Gast
+                          </Badge>
+                        )}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        Lid sinds {new Date(user.created_at).toLocaleDateString('nl-BE')}
+                        {user.guest_account 
+                          ? `Gast #${user.guest_number}`
+                          : `Lid sinds ${new Date(user.created_at).toLocaleDateString('nl-BE')}`
+                        }
                       </div>
                     </div>
                   </TableCell>
@@ -211,11 +243,13 @@ const UserManagement = () => {
                         currentBalance={balances[user.id] || 0}
                       />
                       
-                      <RoleManagement
-                        userId={user.id}
-                        userName={user.name}
-                        currentRole={user.role}
-                      />
+                      {!user.guest_account && (
+                        <RoleManagement
+                          userId={user.id}
+                          userName={user.name}
+                          currentRole={user.role}
+                        />
+                      )}
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -229,16 +263,21 @@ const UserManagement = () => {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Gebruiker verwijderen</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {user.guest_account ? 'Gastaccount verwijderen' : 'Gebruiker verwijderen'}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Weet je zeker dat je <strong>{user.name}</strong> wilt verwijderen? 
-                              Deze actie kan niet ongedaan worden gemaakt. Alle data van deze gebruiker wordt permanent verwijderd.
+                              Weet je zeker dat je <strong>{user.name}</strong> wilt verwijderen?
+                              {user.guest_account 
+                                ? ' Het gastaccount wordt verwijderd, maar alle transacties blijven bewaard voor statistieken.'
+                                : ' Deze actie kan niet ongedaan worden gemaakt. Alle data van deze gebruiker wordt permanent verwijderd.'
+                              }
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Annuleren</AlertDialogCancel>
                             <AlertDialogAction 
-                              onClick={() => handleDeleteUser(user.id, user.name)}
+                              onClick={() => handleDeleteUser(user.id, user.name, user.guest_account)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                             >
                               Verwijderen
