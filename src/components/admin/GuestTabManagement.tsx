@@ -151,26 +151,23 @@ const GuestTabManagement = () => {
 
   const closeGuestTab = async (guestId: string) => {
     try {
+      // Delete the guest account directly (preserves transaction history for statistics)
       const { error } = await (supabase as any)
         .from('profiles')
-        .update({ 
-          occupied: false, 
-          occupied_by_name: null,
-          active: false 
-        })
+        .delete()
         .eq('id', guestId);
       
       if (error) throw error;
 
       loadGuestAccounts();
       toast({
-        title: "Tab gesloten",
-        description: "Gasttab is succesvol gesloten.",
+        title: "Account verwijderd",
+        description: "Gastaccount is verwijderd. Transacties blijven bewaard voor statistieken.",
       });
     } catch (error) {
       toast({
         title: "Fout",
-        description: "Er ging iets mis bij het sluiten van de tab.",
+        description: "Er ging iets mis bij het verwijderen van het account.",
         variant: "destructive",
       });
     }
@@ -340,15 +337,6 @@ const GuestTabManagement = () => {
                         >
                           <QrCode className="h-3 w-3" />
                         </Button>
-                        {guest.balance < 0 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => settleGuestCash(guest.id)}
-                          >
-                            <DollarSign className="h-3 w-3" />
-                          </Button>
-                        )}
                         <Button
                           variant="destructive"
                           size="sm"
