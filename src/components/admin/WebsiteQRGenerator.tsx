@@ -49,64 +49,57 @@ export const WebsiteQRGenerator = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <QrCode className="h-5 w-5" />
+    <Card className="max-w-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <QrCode className="h-4 w-4" />
           Website QR Code
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="text-sm text-muted-foreground">
-          <p>Genereer een QR code die gebruikers direct naar de website brengt.</p>
-          <p className="font-mono bg-muted p-2 rounded mt-2 break-all">{websiteUrl}</p>
-        </div>
-
+      <CardContent className="space-y-3">
         {!qrCodeUrl ? (
-          <div className="text-center space-y-4">
-            <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center mx-auto">
-              <QrCode className="h-16 w-16 text-muted-foreground" />
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+              <QrCode className="h-6 w-6 text-muted-foreground" />
             </div>
             <Button 
               onClick={generateQRCode} 
               disabled={isGenerating}
-              className="w-full"
+              size="sm"
             >
               {isGenerating ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
               ) : (
-                <QrCode className="h-4 w-4 mr-2" />
+                <QrCode className="h-3 w-3 mr-2" />
               )}
-              Generate QR Code
+              Genereer QR
             </Button>
           </div>
         ) : (
-          <div className="text-center space-y-4">
-            <div className="bg-white p-4 rounded-lg inline-block">
-              <img src={qrCodeUrl} alt="Website QR Code" className="mx-auto" />
+          <div className="space-y-3">
+            <div className="bg-white p-2 rounded inline-block">
+              <img src={qrCodeUrl} alt="Website QR Code" className="w-24 h-24" />
             </div>
             
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 onClick={copyUrl}
+                size="sm"
                 className="flex-1"
               >
-                <Copy className="h-4 w-4 mr-2" />
-                Copy URL
+                <Copy className="h-3 w-3 mr-1" />
+                Copy
               </Button>
               <Button 
                 onClick={downloadQRCode}
+                size="sm"
                 className="flex-1"
               >
-                <Download className="h-4 w-4 mr-2" />
+                <Download className="h-3 w-3 mr-1" />
                 Download
               </Button>
             </div>
-            
-            <p className="text-xs text-muted-foreground">
-              Print deze QR code en plaats hem waar mensen hem kunnen scannen om direct naar de website te gaan.
-            </p>
           </div>
         )}
       </CardContent>
