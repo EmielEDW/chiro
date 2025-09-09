@@ -104,7 +104,7 @@ export type Database = {
           note: string | null
           price_cents: number
           source: Database["public"]["Enums"]["consumption_source"]
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           client_id?: string | null
@@ -115,7 +115,7 @@ export type Database = {
           note?: string | null
           price_cents: number
           source?: Database["public"]["Enums"]["consumption_source"]
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           client_id?: string | null
@@ -126,7 +126,7 @@ export type Database = {
           note?: string | null
           price_cents?: number
           source?: Database["public"]["Enums"]["consumption_source"]
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

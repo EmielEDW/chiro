@@ -27,41 +27,38 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
   useEffect(() => {
     if (!isMobile) return;
 
-    let lastScrollY = window.scrollY;
+    // Store the original position of the filter bar
+    let originalOffsetTop = 0;
     
+    const filterBarElement = document.getElementById('category-filter-bar');
+    if (filterBarElement) {
+      originalOffsetTop = filterBarElement.offsetTop;
+    }
+
     const handleScroll = () => {
       const scrollY = window.scrollY;
-      const filterBarElement = document.getElementById('category-filter-bar');
       const mainHeader = document.getElementById('main-header');
       
-      if (filterBarElement && mainHeader) {
-        const filterBarTop = filterBarElement.offsetTop;
-        const headerHeight = mainHeader.offsetHeight;
-        
-        // If we've scrolled to the top, always show the nav bar
-        if (scrollY <= 50) {
+      if (mainHeader) {
+        // Return to normal position when scroll is at or above the original position
+        if (scrollY <= originalOffsetTop) {
           setIsSticky(false);
           mainHeader.style.opacity = '1';
           mainHeader.style.transform = 'translateY(0)';
         }
-        // Make filter bar sticky and hide main header when they would overlap
-        else if (scrollY >= filterBarTop - headerHeight) {
+        // Make filter bar sticky when scrolled past its original position
+        else if (scrollY > originalOffsetTop) {
           setIsSticky(true);
           mainHeader.style.opacity = '0';
           mainHeader.style.transform = 'translateY(-100%)';
-        } 
-        // When scrolling back up and not at the top, restore the filter bar to normal position
-        else if (scrollY < lastScrollY && scrollY < filterBarTop - headerHeight) {
-          setIsSticky(false);
-          mainHeader.style.opacity = '1';
-          mainHeader.style.transform = 'translateY(0)';
         }
       }
-      
-      lastScrollY = scrollY;
     };
 
-    window.addEventListener('scroll', handleScroll);
+    // Initial check
+    handleScroll();
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
       // Cleanup: restore nav bar when component unmounts
