@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,9 +11,12 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Filter, CalendarIcon, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface SaleDetail {
   id: string;
@@ -32,6 +35,8 @@ interface SaleDetail {
 const ITEMS_PER_PAGE = 50;
 
 const SalesDetailsDashboard = () => {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'user' | 'item' | 'transaction'>('all');
   const [filterValue, setFilterValue] = useState('');
@@ -235,6 +240,80 @@ const SalesDetailsDashboard = () => {
     return <Badge variant="outline">Aankoop</Badge>;
   };
 
+  // Mutation to reverse a transaction as admin
+  const reverseTransaction = useMutation({
+    mutationFn: async (consumption: SaleDetail) => {
+      if (!user?.id) throw new Error('Admin not found');
+      if (consumption.is_refunded) throw new Error('Transaction already reversed');
+      if (consumption.type !== 'consumption') throw new Error('Can only reverse consumptions');
+
+      // Record the reversal
+      const { error: reversalError } = await supabase
+        .from('transaction_reversals')
+        .insert({
+          user_id: consumption.user_id,
+          original_transaction_id: consumption.id,
+          original_transaction_type: 'consumption',
+          reversal_reason: `Admin teruggedraaid: ${consumption.item_name}`,
+          reversed_by: user.id // Admin doing the reversal
+        });
+
+      if (reversalError) throw reversalError;
+
+      // Create a reversal adjustment (positive amount to refund)
+      const { error: adjustmentError } = await supabase
+        .from('adjustments')
+        .insert({
+          user_id: consumption.user_id,
+          delta_cents: Math.abs(consumption.price_cents), // Make it positive (refund)
+          reason: `Admin teruggedraaid: ${consumption.item_name}`,
+          created_by: user.id // Admin creating the adjustment
+        });
+
+      if (adjustmentError) throw adjustmentError;
+
+      // If the item has stock tracking, add it back
+      if (consumption.item_name && consumption.item_id) {
+        // Find the item to update stock
+        const { data: itemData, error: itemFindError } = await supabase
+          .from('items')
+          .select('id, stock_quantity')
+          .eq('id', consumption.item_id)
+          .single();
+
+        if (!itemFindError && itemData && itemData.stock_quantity !== null) {
+          // Add stock back
+          const { error: stockError } = await supabase
+            .from('items')
+            .update({ 
+              stock_quantity: itemData.stock_quantity + 1 
+            })
+            .eq('id', itemData.id);
+
+          if (stockError) throw stockError;
+
+          // Log stock transaction
+          await supabase
+            .from('stock_transactions')
+            .insert({
+              item_id: itemData.id,
+              quantity_change: 1,
+              transaction_type: 'reversal',
+              notes: `Admin teruggedraaid: stock teruggeteld voor ${consumption.item_name}`,
+              created_by: user.id
+            });
+        }
+      }
+    },
+    onSuccess: () => {
+      toast.success('Transactie succesvol teruggedraaid!');
+      queryClient.invalidateQueries({ queryKey: ['sales-details'] });
+    },
+    onError: (error) => {
+      toast.error(`Fout bij terugdraaien: ${error.message}`);
+    },
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -420,7 +499,7 @@ const SalesDetailsDashboard = () => {
                 <TableHead>Product/Details</TableHead>
                 <TableHead>Bedrag</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Bron</TableHead>
+                <TableHead>Actie</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -472,7 +551,48 @@ const SalesDetailsDashboard = () => {
                       </Badge>
                     )}
                   </TableCell>
-                  <TableCell>{getSourceBadge(sale.source, sale.type)}</TableCell>
+                  <TableCell>
+                    {sale.type === 'consumption' && !sale.is_refunded && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-orange-600 hover:text-orange-700 h-auto px-2 py-1"
+                          >
+                            <Undo2 className="h-3 w-3 mr-1" />
+                            Terugdraaien
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Weet je zeker dat je deze transactie wilt terugdraaien?
+                              <br />
+                              <strong>Product:</strong> {sale.item_name}
+                              <br />
+                              <strong>Gebruiker:</strong> {sale.user_name}
+                              <br />
+                              <strong>Bedrag:</strong> €{(Math.abs(sale.price_cents) / 100).toFixed(2)}
+                              <br />
+                              <strong>Let op:</strong> De gebruiker krijgt het geld terug en de voorraad wordt bijgewerkt.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => reverseTransaction.mutate(sale)}
+                              disabled={reverseTransaction.isPending}
+                              className="bg-orange-600 hover:bg-orange-700"
+                            >
+                              {reverseTransaction.isPending ? 'Bezig...' : 'Terugdraaien'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
