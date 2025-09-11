@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,9 @@ interface Profile {
 
 const UserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
@@ -81,6 +83,7 @@ const UserManagement = () => {
   };
 
   const handleDeleteUser = async (userId: string, userName: string, isGuest: boolean) => {
+    setDeletingUserId(userId);
     try {
       if (isGuest) {
         // For guest accounts, just delete the profile record
@@ -127,14 +130,17 @@ const UserManagement = () => {
         });
       }
 
-      // Refresh the users list
-      window.location.reload();
+      // Refresh the users list by invalidating queries
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-balances'] });
     } catch (error: any) {
       toast({
         title: "Fout bij verwijderen", 
         description: error.message || "Er ging iets mis bij het verwijderen van de gebruiker.",
         variant: "destructive",
       });
+    } finally {
+      setDeletingUserId(null);
     }
   };
 
@@ -279,8 +285,9 @@ const UserManagement = () => {
                             <AlertDialogAction 
                               onClick={() => handleDeleteUser(user.id, user.name, user.guest_account)}
                               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deletingUserId === user.id}
                             >
-                              Verwijderen
+                              {deletingUserId === user.id ? 'Verwijderen...' : 'Verwijderen'}
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
