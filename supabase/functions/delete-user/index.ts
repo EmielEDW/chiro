@@ -84,16 +84,31 @@ serve(async (req) => {
 
     // Delete the user from auth.users using admin client
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
-    
-    if (deleteError) {
+
+    // If the user is already deleted in auth, continue gracefully
+    if (deleteError && !/user not found|user_not_found/i.test(deleteError.message)) {
       return new Response(
         JSON.stringify({ error: `Failed to delete user: ${deleteError.message}` }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
+    // Remove the profile row so the user disappears from admin lists
+    const { error: profileDeleteError } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', userId)
+
+    if (profileDeleteError) {
+      // Surface profile deletion issues as errors
+      return new Response(
+        JSON.stringify({ error: `Failed to delete profile: ${profileDeleteError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     return new Response(
-      JSON.stringify({ success: true, message: 'User deleted successfully' }),
+      JSON.stringify({ success: true, message: 'User and profile deleted successfully' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

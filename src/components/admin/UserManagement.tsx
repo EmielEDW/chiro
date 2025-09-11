@@ -101,27 +101,12 @@ const UserManagement = () => {
         });
       } else {
         // For regular users, call edge function to delete from auth.users and profiles  
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          throw new Error('Not authenticated');
-        }
+        const { data: result, error: invokeError } = await supabase.functions.invoke('delete-user', {
+          body: { userId }
+        });
 
-        const response = await fetch(
-          `https://fslqlkqjechlvvziaydj.supabase.co/functions/v1/delete-user`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({ userId }),
-          }
-        );
-
-        const result = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to delete user');
+        if (invokeError) {
+          throw new Error(invokeError.message || 'Failed to delete user');
         }
 
         toast({
