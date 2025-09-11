@@ -247,11 +247,26 @@ const SalesDetailsDashboard = () => {
       if (consumption.is_refunded) throw new Error('Transaction already reversed');
       if (consumption.type !== 'consumption') throw new Error('Can only reverse consumptions');
 
+      // Ensure we have a target user id (some legacy records may miss it)
+      let targetUserId = consumption.user_id;
+      if (!targetUserId) {
+        const { data: fallbackConsumption, error: fetchErr } = await supabase
+          .from('consumptions')
+          .select('user_id')
+          .eq('id', consumption.id)
+          .maybeSingle();
+        if (fetchErr) throw fetchErr;
+        targetUserId = fallbackConsumption?.user_id || undefined;
+      }
+      if (!targetUserId) {
+        throw new Error('Transactie heeft geen gekoppelde gebruiker en kan niet worden teruggedraaid.');
+      }
+
       // Record the reversal
       const { error: reversalError } = await supabase
         .from('transaction_reversals')
         .insert({
-          user_id: consumption.user_id,
+          user_id: targetUserId,
           original_transaction_id: consumption.id,
           original_transaction_type: 'consumption',
           reversal_reason: `Admin teruggedraaid: ${consumption.item_name}`,
@@ -264,7 +279,7 @@ const SalesDetailsDashboard = () => {
       const { error: adjustmentError } = await supabase
         .from('adjustments')
         .insert({
-          user_id: consumption.user_id,
+          user_id: targetUserId,
           delta_cents: Math.abs(consumption.price_cents), // Make it positive (refund)
           reason: `Admin teruggedraaid: ${consumption.item_name}`,
           created_by: user.id // Admin creating the adjustment
