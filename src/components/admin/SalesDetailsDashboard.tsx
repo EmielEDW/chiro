@@ -247,7 +247,7 @@ const SalesDetailsDashboard = () => {
       if (consumption.is_refunded) throw new Error('Transaction already reversed');
       if (consumption.type !== 'consumption') throw new Error('Can only reverse consumptions');
 
-      // Ensure we have a target user id (some legacy records may miss it)
+      // Get target user id - may be null for deleted users
       let targetUserId = consumption.user_id;
       if (!targetUserId) {
         const { data: fallbackConsumption, error: fetchErr } = await supabase
@@ -256,10 +256,7 @@ const SalesDetailsDashboard = () => {
           .eq('id', consumption.id)
           .maybeSingle();
         if (fetchErr) throw fetchErr;
-        targetUserId = fallbackConsumption?.user_id || undefined;
-      }
-      if (!targetUserId) {
-        throw new Error('Transactie heeft geen gekoppelde gebruiker en kan niet worden teruggedraaid.');
+        targetUserId = fallbackConsumption?.user_id || null;
       }
 
       // Record the reversal
@@ -275,17 +272,19 @@ const SalesDetailsDashboard = () => {
 
       if (reversalError) throw reversalError;
 
-      // Create a reversal adjustment (positive amount to refund)
-      const { error: adjustmentError } = await supabase
-        .from('adjustments')
-        .insert({
-          user_id: targetUserId,
-          delta_cents: Math.abs(consumption.price_cents), // Make it positive (refund)
-          reason: `Admin teruggedraaid: ${consumption.item_name}`,
-          created_by: user.id // Admin creating the adjustment
-        });
+      // Create a reversal adjustment (positive amount to refund) only if user still exists
+      if (targetUserId) {
+        const { error: adjustmentError } = await supabase
+          .from('adjustments')
+          .insert({
+            user_id: targetUserId,
+            delta_cents: Math.abs(consumption.price_cents), // Make it positive (refund)
+            reason: `Admin teruggedraaid: ${consumption.item_name}`,
+            created_by: user.id // Admin creating the adjustment
+          });
 
-      if (adjustmentError) throw adjustmentError;
+        if (adjustmentError) throw adjustmentError;
+      }
 
       // If the item has stock tracking, add it back
       if (consumption.item_name && consumption.item_id) {

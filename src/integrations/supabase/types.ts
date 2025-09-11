@@ -424,7 +424,7 @@ export type Database = {
           reversal_reason: string
           reversed_at: string
           reversed_by: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           id?: string
@@ -433,7 +433,7 @@ export type Database = {
           reversal_reason: string
           reversed_at?: string
           reversed_by: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           id?: string
@@ -442,9 +442,17 @@ export type Database = {
           reversal_reason?: string
           reversed_at?: string
           reversed_by?: string
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "transaction_reversals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_archived: {
         Row: {
