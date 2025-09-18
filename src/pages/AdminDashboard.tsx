@@ -99,29 +99,41 @@ const AdminDashboard = () => {
         </div>
 
 
-        {/* Website QR Code */}
-        <WebsiteQRGenerator />
-
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-5 h-12 bg-background border-2 border-muted">
+            <TabsTrigger 
+              value="overview" 
+              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+            >
               <BarChart3 className="h-4 w-4" />
               Overzicht
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="users" 
+              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+            >
               <Users className="h-4 w-4" />
               Gebruikers
             </TabsTrigger>
-            <TabsTrigger value="guests" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="guests" 
+              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+            >
               <Users className="h-4 w-4" />
               Gasttabs
             </TabsTrigger>
-            <TabsTrigger value="stock" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="stock" 
+              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+            >
               <Package className="h-4 w-4" />
               Voorraad
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TabsTrigger 
+              value="analytics" 
+              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+            >
               <Settings className="h-4 w-4" />
               Analytics
             </TabsTrigger>
@@ -150,6 +162,11 @@ const AdminDashboard = () => {
             <SalesDetailsDashboard />
           </TabsContent>
         </Tabs>
+
+        {/* QR Code at bottom */}
+        <div className="flex justify-center pt-8">
+          <WebsiteQRGenerator />
+        </div>
       </div>
     </div>
   );
