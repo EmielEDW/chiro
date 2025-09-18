@@ -104,38 +104,38 @@ const AdminDashboard = () => {
           <TabsList className="grid w-full grid-cols-5 h-12 bg-background border-2 border-muted">
             <TabsTrigger 
               value="overview" 
-              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
-              <BarChart3 className="h-4 w-4" />
-              Overzicht
+              <BarChart3 className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Overzicht</span>
             </TabsTrigger>
             <TabsTrigger 
               value="users" 
-              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
-              <Users className="h-4 w-4" />
-              Gebruikers
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Gebruikers</span>
             </TabsTrigger>
             <TabsTrigger 
               value="guests" 
-              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
-              <Users className="h-4 w-4" />
-              Gasttabs
+              <Users className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Gasttabs</span>
             </TabsTrigger>
             <TabsTrigger 
               value="stock" 
-              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
-              <Package className="h-4 w-4" />
-              Voorraad
+              <Package className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Voorraad</span>
             </TabsTrigger>
             <TabsTrigger 
               value="analytics" 
-              className="flex items-center gap-2 h-10 text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
-              <Settings className="h-4 w-4" />
-              Analytics
+              <Settings className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
           </TabsList>
 
