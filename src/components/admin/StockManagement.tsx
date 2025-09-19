@@ -158,7 +158,10 @@ const StockManagement = () => {
 
   const lowStockItems = items.filter(item => 
     item.stock_quantity !== null && 
-    item.stock_quantity < (item.stock_alert_threshold || 10)
+    item.stock_quantity < (item.stock_alert_threshold || 10) &&
+    item.category !== 'mixed_drinks' &&
+    !item.name.toLowerCase().includes('boete') &&
+    !item.name.toLowerCase().includes('te laat')
   );
 
   if (isLoading) {
