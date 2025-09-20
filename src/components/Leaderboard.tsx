@@ -55,7 +55,8 @@ const Leaderboard = () => {
           id,
           profiles!consumptions_user_id_fkey (
             name,
-            avatar_url
+            avatar_url,
+            guest_account
           )
         `)
         .gte('created_at', startDate)
@@ -73,8 +74,11 @@ const Leaderboard = () => {
       
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
-      // Filter out refunded transactions
-      const validData = data.filter(consumption => !reversedIds.has(consumption.id));
+      // Filter out refunded transactions and guest accounts
+      const validData = data.filter(consumption => 
+        !reversedIds.has(consumption.id) && 
+        !consumption.profiles?.guest_account
+      );
       
       // Group by user and sum spending
       const userSpending = validData.reduce((acc, consumption) => {
