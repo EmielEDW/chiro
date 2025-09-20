@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Award } from 'lucide-react';
 
@@ -206,13 +206,10 @@ const Leaderboard = () => {
                       </div>
                       
                       <Avatar className="h-10 w-10">
-                        {entry.avatar_url && (
-                          <img 
-                            src={entry.avatar_url} 
-                            alt={entry.user_name}
-                            className="h-full w-full object-cover rounded-full"
-                          />
-                        )}
+                        <AvatarImage 
+                          src={entry.avatar_url} 
+                          alt={entry.user_name}
+                        />
                         <AvatarFallback>
                           {entry.user_name.charAt(0).toUpperCase()}
                         </AvatarFallback>
