@@ -22,8 +22,9 @@ const LateFeeDialog = ({ onLateFeeProcessed, children }: LateFeeDialogProps) => 
 
   const calculateLateFee = (minutesLate: number): number => {
     if (minutesLate <= 0) return 0;
-    // 1-4 min -> €1, every next full 5 min adds €1, capped at €5
-    const euros = Math.min(Math.floor(minutesLate / 5) + 1, 5);
+    // 1-5 min -> €1, every next full 5 min adds €1, capped at €5
+    if (minutesLate <= 5) return 100; // €1 for first 5 minutes
+    const euros = Math.min(Math.floor((minutesLate - 1) / 5) + 1, 5);
     return euros * 100;
   };
 
@@ -151,8 +152,9 @@ const LateFeeDialog = ({ onLateFeeProcessed, children }: LateFeeDialogProps) => 
             <div className="bg-muted/50 p-3 rounded-md text-xs">
               <p className="font-medium mb-1">Tarieven:</p>
               <ul className="space-y-1">
-                <li>• Eerste minuut te laat: €1,00</li>
-                <li>• Elke 5 minuten extra: +€1,00</li>
+                <li>• 1-5 minuten te laat: €1,00</li>
+                <li>• 6-10 minuten te laat: €2,00</li>
+                <li>• 11-15 minuten te laat: €3,00</li>
                 <li>• Maximum: €5,00</li>
               </ul>
             </div>
