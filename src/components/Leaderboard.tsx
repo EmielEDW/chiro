@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Award } from 'lucide-react';
 
@@ -55,8 +55,7 @@ const Leaderboard = () => {
           id,
           profiles!consumptions_user_id_fkey (
             name,
-            avatar_url,
-            guest_account
+            avatar_url
           )
         `)
         .gte('created_at', startDate)
@@ -74,11 +73,8 @@ const Leaderboard = () => {
       
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
-      // Filter out refunded transactions and guest accounts
-      const validData = data.filter(consumption => 
-        !reversedIds.has(consumption.id) && 
-        !consumption.profiles?.guest_account
-      );
+      // Filter out refunded transactions
+      const validData = data.filter(consumption => !reversedIds.has(consumption.id));
       
       // Group by user and sum spending
       const userSpending = validData.reduce((acc, consumption) => {
@@ -204,7 +200,13 @@ const Leaderboard = () => {
                       </div>
                       
                       <Avatar className="h-10 w-10">
-                        <AvatarImage src={entry.avatar_url} alt={entry.user_name} />
+                        {entry.avatar_url && (
+                          <img 
+                            src={entry.avatar_url} 
+                            alt={entry.user_name}
+                            className="h-full w-full object-cover rounded-full"
+                          />
+                        )}
                         <AvatarFallback>
                           {entry.user_name.charAt(0).toUpperCase()}
                         </AvatarFallback>

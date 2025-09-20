@@ -11,6 +11,3 @@ verify_jwt = true
 
 [functions.verify-payment]
 verify_jwt = false
-
-[functions.send-consumption-sms]
-verify_jwt = false
