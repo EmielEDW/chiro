@@ -206,13 +206,16 @@ const Leaderboard = () => {
                       </div>
                       
                       <Avatar className="h-10 w-10">
-                        <AvatarImage 
-                          src={entry.avatar_url} 
-                          alt={entry.user_name}
-                        />
-                        <AvatarFallback>
-                          {entry.user_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
+                        {entry.avatar_url ? (
+                          <AvatarImage 
+                            src={entry.avatar_url} 
+                            alt={`Profielfoto van ${entry.user_name}`}
+                          />
+                        ) : (
+                          <AvatarFallback>
+                            {entry.user_name.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        )}
                       </Avatar>
                       
                       <div>
