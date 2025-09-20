@@ -16,7 +16,7 @@ interface LeaderboardEntry {
 }
 
 const Leaderboard = () => {
-  const [activeTab, setActiveTab] = useState('7days');
+  const [activeTab, setActiveTab] = useState('alltime');
 
   const getDateRange = (period: string) => {
     const now = new Date();
@@ -74,10 +74,12 @@ const Leaderboard = () => {
       
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
-      // Filter out refunded transactions and guest accounts
+      // Filter out refunded transactions, guest accounts, and users without valid profiles
       const validData = data.filter(consumption => 
         !reversedIds.has(consumption.id) && 
-        !consumption.profiles?.guest_account
+        !consumption.profiles?.guest_account &&
+        consumption.profiles?.name && 
+        consumption.profiles.name !== 'Onbekend'
       );
       
       // Group by user and sum spending
