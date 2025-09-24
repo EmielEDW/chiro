@@ -53,6 +53,9 @@ const Leaderboard = () => {
           user_id,
           price_cents,
           id,
+          items!consumptions_item_id_fkey (
+            name
+          ),
           profiles!consumptions_user_id_fkey (
             name,
             avatar_url,
@@ -74,12 +77,13 @@ const Leaderboard = () => {
       
       const reversedIds = new Set(reversals.map(r => r.original_transaction_id));
       
-      // Filter out refunded transactions, guest accounts, and users without valid profiles
+      // Filter out refunded transactions, guest accounts, late fees, and users without valid profiles  
       const validData = data.filter(consumption => 
         !reversedIds.has(consumption.id) && 
         !consumption.profiles?.guest_account &&
         consumption.profiles?.name && 
-        consumption.profiles.name !== 'Onbekend'
+        consumption.profiles.name !== 'Onbekend' &&
+        consumption.items?.name !== 'Te laat boete'
       );
       
       // Group by user and sum spending
