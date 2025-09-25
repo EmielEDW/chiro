@@ -236,7 +236,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(6)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-4">
@@ -294,7 +294,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
             </Badge>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {favoriteItems.map((item) => {
               const affordable = canAfford(item.price_cents);
               const isFavorite = favorites.includes(item.id);
@@ -401,7 +401,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
             </Badge>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {groupedItems[category].map((item) => {
               const affordable = canAfford(item.price_cents);
               const isFavorite = favorites.includes(item.id);
