@@ -86,7 +86,7 @@ serve(async (req) => {
     // Update transaction_reversals to set reversed_by to NULL where it references this user
     const { error: updateReversalsError } = await supabaseAdmin
       .from('transaction_reversals')
-      .update({ reversed_by: null })
+      .update({ reversed_by: user.id })
       .eq('reversed_by', userId)
 
     if (updateReversalsError) {
@@ -99,7 +99,7 @@ serve(async (req) => {
     // Update adjustments to set created_by to NULL where it references this user
     const { error: updateAdjustmentsError } = await supabaseAdmin
       .from('adjustments')
-      .update({ created_by: null })
+      .update({ created_by: user.id })
       .eq('created_by', userId)
 
     if (updateAdjustmentsError) {
@@ -112,7 +112,7 @@ serve(async (req) => {
     // Update stock_transactions to set created_by to NULL where it references this user
     const { error: updateStockError } = await supabaseAdmin
       .from('stock_transactions')
-      .update({ created_by: null })
+      .update({ created_by: user.id })
       .eq('created_by', userId)
 
     if (updateStockError) {
