@@ -8,7 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { AlertCircle, User, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
@@ -515,74 +516,121 @@ const Auth = () => {
                  </form>
                </TabsContent>
 
-               <TabsContent value="guest" className="space-y-4">
-                 {/* Existing Guest Accounts */}
-                 <div className="space-y-3">
-                   <div className="flex justify-between items-center">
-                     <Label className="text-sm font-medium">Bestaande gastaccounts</Label>
-                     <Button 
-                       variant="outline" 
-                       size="sm" 
-                       onClick={loadExistingGuests}
-                       disabled={loadingGuests}
-                     >
-                       {loadingGuests ? <Loader2 className="h-3 w-3 animate-spin" /> : "Ververs"}
-                     </Button>
-                   </div>
-                   
-                   {existingGuests.length > 0 ? (
-                     <div className="space-y-2 max-h-48 overflow-y-auto">
-                       {existingGuests.map((guest) => (
-                         <div key={guest.id} className="flex items-center justify-between p-3 border rounded-lg">
-                           <div>
-                             <p className="font-medium">{guest.occupied_by_name}</p>
-                             <p className="text-sm text-muted-foreground">
-                               Saldo: <span className={guest.balance < 0 ? "text-destructive font-medium" : ""}>
-                                 {formatCurrency(guest.balance)}
-                               </span>
-                             </p>
-                           </div>
-                           <Button 
-                             size="sm" 
-                             onClick={() => handleExistingGuestLogin(guest.id)}
-                           >
-                             Inloggen
-                           </Button>
-                         </div>
-                       ))}
-                     </div>
-                   ) : (
-                     <p className="text-sm text-muted-foreground text-center py-4">
-                       Geen openstaande gastaccounts gevonden
-                     </p>
-                   )}
-                 </div>
+                <TabsContent value="guest" className="space-y-6">
+                  {/* Existing Guest Accounts */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <Label className="text-base font-semibold">Openstaande gastaccounts</Label>
+                        <p className="text-sm text-muted-foreground">Login met een bestaand gastaccount</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={loadExistingGuests}
+                        disabled={loadingGuests}
+                        className="shrink-0"
+                      >
+                        {loadingGuests ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : "Ververs"}
+                      </Button>
+                    </div>
+                    
+                    {existingGuests.length > 0 ? (
+                      <div className="space-y-3 max-h-64 overflow-y-auto">
+                        {existingGuests.map((guest) => (
+                          <div 
+                            key={guest.id} 
+                            className="group flex items-center justify-between p-4 border rounded-xl hover:shadow-md hover:border-primary/30 transition-all duration-200 bg-gradient-to-r from-card to-card/50"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                                <User className="h-5 w-5 text-primary" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{guest.occupied_by_name}</p>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm text-muted-foreground">
+                                    Saldo: 
+                                  </p>
+                                  <Badge 
+                                    variant={guest.balance < 0 ? "destructive" : "secondary"}
+                                    className="text-xs"
+                                  >
+                                    {formatCurrency(guest.balance)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleExistingGuestLogin(guest.id)}
+                              className="group-hover:shadow-sm"
+                            >
+                              Inloggen
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="p-4 bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                          <User className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm font-medium text-muted-foreground mb-1">
+                          Geen openstaande gastaccounts
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Maak hieronder een nieuw gastaccount aan
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                 {/* Create New Guest Account */}
-                 <div className="border-t pt-4">
-                   <form onSubmit={handleGuestLogin} className="space-y-4">
-                     <div className="space-y-2">
-                       <Label htmlFor="guest-name">Nieuw gastaccount aanmaken</Label>
-                       <Input
-                         id="guest-name"
-                         type="text"
-                         value={guestName}
-                         onChange={(e) => setGuestName(e.target.value)}
-                         placeholder="Jouw naam"
-                         required
-                         maxLength={50}
-                       />
-                       <p className="text-xs text-muted-foreground">
-                         Als gast kun je dranken bestellen die later afgerekend worden.
-                       </p>
-                     </div>
-                     <Button type="submit" className="w-full" disabled={guestLoading}>
-                       {guestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                       Nieuw gastaccount maken
-                     </Button>
-                   </form>
-                 </div>
-               </TabsContent>
+                  {/* Create New Guest Account */}
+                  <div className="border-t pt-6">
+                    <div className="mb-4">
+                      <Label className="text-base font-semibold">Nieuw gastaccount aanmaken</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Perfect voor bezoekers die nog geen account hebben
+                      </p>
+                    </div>
+                    
+                    <form onSubmit={handleGuestLogin} className="space-y-4">
+                      <div className="space-y-2">
+                        <Input
+                          id="guest-name"
+                          type="text"
+                          value={guestName}
+                          onChange={(e) => setGuestName(e.target.value)}
+                          placeholder="Jouw volledige naam"
+                          required
+                          maxLength={50}
+                          className="h-12"
+                        />
+                        <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                          <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+                          <div className="text-sm text-blue-800">
+                            <p className="font-medium mb-1">Hoe werkt het?</p>
+                            <ul className="text-xs space-y-1">
+                              <li>• Bestel dranken zonder vooraf te betalen</li>
+                              <li>• Reken achteraf af via bankoverschrijving</li>
+                              <li>• Krijg een overzicht van al je bestellingen</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                      <Button 
+                        type="submit" 
+                        className="w-full h-12 text-base" 
+                        disabled={guestLoading}
+                      >
+                        {guestLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <User className="mr-2 h-4 w-4" />
+                        Gastaccount aanmaken
+                      </Button>
+                    </form>
+                  </div>
+                </TabsContent>
              </Tabs>
            )}
 

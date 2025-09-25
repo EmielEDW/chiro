@@ -27,7 +27,7 @@ interface GuestHistoryProps {
 }
 
 export const GuestHistory = ({ guestUserId, onBalanceChange }: GuestHistoryProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true); // Default to expanded for better UX
   const queryClient = useQueryClient();
 
   const { data: historyItems = [], isLoading } = useQuery({
@@ -171,46 +171,86 @@ export const GuestHistory = ({ guestUserId, onBalanceChange }: GuestHistoryProps
   // Always show history section for guests so they know the functionality exists
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
+    <Card className="border-primary/20">
+      <CardHeader className="pb-3">
         <Button
           variant="ghost"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full p-0"
+          className="flex items-center justify-between w-full p-0 hover:bg-transparent"
         >
           <div className="flex items-center gap-2">
-            <History className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Recente Bestellingen</CardTitle>
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <History className="h-4 w-4 text-primary" />
+            </div>
+            <div className="text-left">
+              <CardTitle className="text-lg">Recente Bestellingen</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {historyItems.length > 0 ? `${historyItems.length} recente items` : 'Nog geen bestellingen'}
+              </p>
+            </div>
           </div>
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          <div className="flex items-center gap-2">
+            {historyItems.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {historyItems.length}
+              </Badge>
+            )}
+            {isExpanded ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </div>
         </Button>
       </CardHeader>
-      
       {isExpanded && (
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-4 pt-0">
           {isLoading ? (
-            [...Array(3)].map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-16" />
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-xl bg-gradient-to-r from-muted/50 to-transparent">
+                  <div className="space-y-2 flex-1">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-8 w-16" />
                 </div>
-                <Skeleton className="h-6 w-12" />
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            historyItems.map((item) => (
-              <div
-                key={item.id}
-                className={cn(
-                  "flex items-center justify-between p-3 border rounded-lg",
-                  item.isReversed ? "opacity-50 bg-muted/30" : "hover:bg-muted/50"
-                )}
-              >
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{item.item_name}</p>
+            <div className="space-y-3">
+              {historyItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "flex items-center justify-between p-4 border rounded-xl transition-all duration-200",
+                    item.isReversed 
+                      ? "opacity-60 bg-muted/30 border-muted" 
+                      : "hover:shadow-md hover:border-primary/30 bg-gradient-to-r from-card to-card/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      item.isReversed 
+                        ? "bg-muted-foreground" 
+                        : index === 0 
+                          ? "bg-primary animate-pulse" 
+                          : "bg-muted-foreground/40"
+                    )} />
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm">{item.item_name}</p>
+                        <Badge 
+                          variant={item.isReversed ? "secondary" : "outline"} 
+                          className={cn(
+                            "text-xs",
+                            !item.isReversed && "text-red-600 border-red-200"
+                          )}
+                        >
+                          {item.isReversed ? "Terugbetaald" : `-${formatCurrency(item.price_cents)}`}
+                        </Badge>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(item.created_at), {
                           addSuffix: true,
@@ -218,69 +258,75 @@ export const GuestHistory = ({ guestUserId, onBalanceChange }: GuestHistoryProps
                         })}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-destructive">
-                        -{formatCurrency(item.price_cents)}
+                  </div>
+                  
+                  <div className="ml-3">
+                    {item.isReversed ? (
+                      <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                        ✓ Terugbetaald
                       </Badge>
-                      {item.isReversed ? (
-                        <Badge variant="secondary" className="text-xs">
-                          Terugbetaald
-                        </Badge>
-                      ) : canReverse(item) ? (
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-orange-600 hover:text-orange-700 h-auto px-2 py-1"
+                    ) : canReverse(item) ? (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-orange-600 hover:text-orange-700 border-orange-200 hover:bg-orange-50 h-8 px-3"
+                          >
+                            <Undo2 className="h-3 w-3 mr-1" />
+                            Foutje
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Bestelling terugdraaien?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Weet je zeker dat je deze bestelling wilt terugdraaien?
+                              <br />
+                              <strong>Product:</strong> {item.item_name}
+                              <br />
+                              <strong>Bedrag:</strong> {formatCurrency(item.price_cents)}
+                              <br />
+                              <strong>Let op:</strong> Je krijgt het geld terug en de voorraad wordt bijgewerkt.
+                              <br />
+                              <em className="text-sm">Je kunt alleen bestellingen van de laatste 4 uur terugdraaien.</em>
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => reverseTransaction.mutate(item)}
+                              disabled={reverseTransaction.isPending}
+                              className="bg-orange-600 hover:bg-orange-700"
                             >
-                              <Undo2 className="h-3 w-3 mr-1" />
-                              Foutje
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Bestelling terugdraaien?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Weet je zeker dat je deze bestelling wilt terugdraaien?
-                                <br />
-                                <strong>Product:</strong> {item.item_name}
-                                <br />
-                                <strong>Bedrag:</strong> {formatCurrency(item.price_cents)}
-                                <br />
-                                <strong>Let op:</strong> Je krijgt het geld terug en de voorraad wordt bijgewerkt.
-                                <br />
-                                <em className="text-sm">Je kunt alleen bestellingen van de laatste 4 uur terugdraaien.</em>
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => reverseTransaction.mutate(item)}
-                                disabled={reverseTransaction.isPending}
-                                className="bg-orange-600 hover:bg-orange-700"
-                              >
-                                {reverseTransaction.isPending ? 'Bezig...' : 'Terugdraaien'}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        <Badge variant="secondary" className="text-xs">
-                          Te oud
-                        </Badge>
-                      )}
-                    </div>
+                              {reverseTransaction.isPending ? 'Bezig...' : 'Terugdraaien'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                      <Badge variant="secondary" className="text-xs">
+                        Te oud
+                      </Badge>
+                    )}
                   </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
           
           {historyItems.length === 0 && !isLoading && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Nog geen bestellingen geplaatst
-            </p>
+            <div className="text-center py-8">
+              <div className="p-4 bg-muted/30 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                <History className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">
+                Nog geen bestellingen
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Je bestellingen verschijnen hier zodra je iets bestelt
+              </p>
+            </div>
           )}
         </CardContent>
       )}
