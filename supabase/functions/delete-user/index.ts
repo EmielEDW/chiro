@@ -82,6 +82,46 @@ serve(async (req) => {
       )
     }
 
+    // First, handle foreign key constraints by nullifying references to this user
+    // Update transaction_reversals to set reversed_by to NULL where it references this user
+    const { error: updateReversalsError } = await supabaseAdmin
+      .from('transaction_reversals')
+      .update({ reversed_by: null })
+      .eq('reversed_by', userId)
+
+    if (updateReversalsError) {
+      return new Response(
+        JSON.stringify({ error: `Failed to update transaction reversals: ${updateReversalsError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Update adjustments to set created_by to NULL where it references this user
+    const { error: updateAdjustmentsError } = await supabaseAdmin
+      .from('adjustments')
+      .update({ created_by: null })
+      .eq('created_by', userId)
+
+    if (updateAdjustmentsError) {
+      return new Response(
+        JSON.stringify({ error: `Failed to update adjustments: ${updateAdjustmentsError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Update stock_transactions to set created_by to NULL where it references this user
+    const { error: updateStockError } = await supabaseAdmin
+      .from('stock_transactions')
+      .update({ created_by: null })
+      .eq('created_by', userId)
+
+    if (updateStockError) {
+      return new Response(
+        JSON.stringify({ error: `Failed to update stock transactions: ${updateStockError.message}` }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Delete the user from auth.users using admin client
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
@@ -114,7 +154,7 @@ serve(async (req) => {
 
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: `Server error: ${error.message}` }),
+      JSON.stringify({ error: `Server error: ${(error as Error).message}` }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
