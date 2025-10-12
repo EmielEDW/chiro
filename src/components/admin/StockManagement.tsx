@@ -160,10 +160,7 @@ const StockManagement = () => {
   const lowStockItems = items.filter(item => 
     item.stock_quantity !== null && 
     item.stock_quantity < (item.stock_alert_threshold || 10) &&
-    item.category !== 'mixed_drinks' &&
-    !item.name.toLowerCase().includes('boete') &&
-    !item.name.toLowerCase().includes('te laat') &&
-    (item.notify_on_low_stock !== false) // Only show if explicitly enabled or not set (defaults to true)
+    (item.notify_on_low_stock !== false) // Only show if toggle is enabled
   );
 
   if (isLoading) {

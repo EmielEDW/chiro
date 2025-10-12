@@ -249,45 +249,6 @@ const GuestTabManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Create new guest */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Nieuw gastaccount
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <Label htmlFor="guest-name">Naam van de gast</Label>
-              <Input
-                id="guest-name"
-                value={newGuestName}
-                onChange={(e) => setNewGuestName(e.target.value)}
-                placeholder="Bijv. Jan, Marie, ..."
-                disabled={isCreatingGuest}
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <Button 
-                onClick={handleCreateGuest}
-                disabled={!newGuestName.trim() || isCreatingGuest}
-              >
-                {isCreatingGuest ? 'Bezig...' : 'Aanmaken'}
-              </Button>
-              <Button 
-                onClick={handleTestFunction}
-                variant="outline"
-                size="sm"
-              >
-                Test DB
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Active guest tabs */}
       <Card>
         <CardHeader>
