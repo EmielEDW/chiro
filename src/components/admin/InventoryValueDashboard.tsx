@@ -367,67 +367,28 @@ const InventoryValueDashboard = () => {
         </Card>
       </div>
 
-      {/* Detailed Table */}
+      {/* Summary Stats Only - Detailed inventory is in Voorraad tab */}
       <Card>
         <CardHeader>
-          <CardTitle>Inventaris details</CardTitle>
+          <CardTitle>Voorraad Samenvatting</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Overzicht van alle producten met voorraad waarden
+            Totaal aantal items in voorraad: {totals.totalItems}
           </p>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Categorie</TableHead>
-                  <TableHead>Voorraad</TableHead>
-                  <TableHead>Inkoopprijs</TableHead>
-                  <TableHead>Verkoopprijs</TableHead>
-                  <TableHead>Inkoopwaarde</TableHead>
-                  <TableHead>Verkoopwaarde</TableHead>
-                  <TableHead>Winst per item</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {items.map((item) => {
-                  const purchaseValue = item.stock_quantity * item.purchase_price_cents;
-                  const saleValue = item.stock_quantity * item.price_cents;
-                  const profitPerItem = item.price_cents - item.purchase_price_cents;
-                  
-                  return (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{getCategoryBadge(item.category)}</TableCell>
-                      <TableCell>
-                        <Badge variant={item.stock_quantity > 0 ? "default" : "secondary"}>
-                          {item.stock_quantity}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{formatCurrency(item.purchase_price_cents)}</TableCell>
-                      <TableCell>{formatCurrency(item.price_cents)}</TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(purchaseValue)}
-                      </TableCell>
-                      <TableCell className="font-mono">
-                        {formatCurrency(saleValue)}
-                      </TableCell>
-                      <TableCell className={`font-mono ${profitPerItem >= 0 ? 'text-success' : 'text-destructive'}`}>
-                        {formatCurrency(profitPerItem)}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-          
-          {items.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              Geen producten gevonden.
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Inkoopwaarde voorraad</div>
+              <div className="text-xl font-bold">{formatCurrency(totals.totalPurchaseValue)}</div>
             </div>
-          )}
+            <div>
+              <div className="text-sm text-muted-foreground">Aantal verschillende producten</div>
+              <div className="text-xl font-bold">{items.length}</div>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            Voor gedetailleerde voorraad informatie, ga naar het "Voorraad" tabje
+          </p>
         </CardContent>
       </Card>
     </div>

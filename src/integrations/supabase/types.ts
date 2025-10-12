@@ -193,6 +193,7 @@ export type Database = {
           image_url: string | null
           is_default: boolean
           name: string
+          notify_on_low_stock: boolean
           price_cents: number
           purchase_price_cents: number | null
           stock_alert_threshold: number | null
@@ -209,6 +210,7 @@ export type Database = {
           image_url?: string | null
           is_default?: boolean
           name: string
+          notify_on_low_stock?: boolean
           price_cents: number
           purchase_price_cents?: number | null
           stock_alert_threshold?: number | null
@@ -225,6 +227,7 @@ export type Database = {
           image_url?: string | null
           is_default?: boolean
           name?: string
+          notify_on_low_stock?: boolean
           price_cents?: number
           purchase_price_cents?: number | null
           stock_alert_threshold?: number | null

@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Edit, Trash2, Upload, X } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 
 interface Item {
   id: string;
@@ -23,6 +24,7 @@ interface Item {
   category?: string;
   image_url?: string;
   stock_quantity?: number;
+  notify_on_low_stock?: boolean;
   created_at: string;
 }
 
@@ -49,6 +51,7 @@ const ProductManagement = () => {
     description: '',
     category: '',
     stock_quantity: '',
+    notify_on_low_stock: true,
   });
 
   const { data: items = [], isLoading } = useQuery({
@@ -273,6 +276,7 @@ const ProductManagement = () => {
       description: '',
       category: '',
       stock_quantity: '',
+      notify_on_low_stock: true,
     });
     setEditingItem(null);
     setImageFile(null);
@@ -288,6 +292,7 @@ const ProductManagement = () => {
       description: item.description || '',
       category: item.category || '',
       stock_quantity: item.stock_quantity?.toString() || '0',
+      notify_on_low_stock: item.notify_on_low_stock ?? true,
     });
     setIsDialogOpen(true);
   };
@@ -365,6 +370,7 @@ const ProductManagement = () => {
       description: formData.description || null,
       category: formData.category || null,
       stock_quantity: parseInt(formData.stock_quantity) || 0,
+      notify_on_low_stock: formData.notify_on_low_stock,
       active: true,
     };
 
@@ -551,6 +557,22 @@ const ProductManagement = () => {
                     type="number"
                     value={formData.stock_quantity}
                     onChange={(e) => setFormData({ ...formData, stock_quantity: e.target.value })}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="notify_low_stock" className="text-base">
+                      Lage voorraad melding
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Toon waarschuwing bij lage voorraad in admin dashboard
+                    </p>
+                  </div>
+                  <Switch
+                    id="notify_low_stock"
+                    checked={formData.notify_on_low_stock}
+                    onCheckedChange={(checked) => setFormData({ ...formData, notify_on_low_stock: checked })}
                   />
                 </div>
 

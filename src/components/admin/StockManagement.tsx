@@ -28,6 +28,7 @@ interface Item {
   image_url?: string;
   stock_quantity?: number;
   stock_alert_threshold?: number;
+  notify_on_low_stock?: boolean;
 }
 
 const StockManagement = () => {
@@ -161,7 +162,8 @@ const StockManagement = () => {
     item.stock_quantity < (item.stock_alert_threshold || 10) &&
     item.category !== 'mixed_drinks' &&
     !item.name.toLowerCase().includes('boete') &&
-    !item.name.toLowerCase().includes('te laat')
+    !item.name.toLowerCase().includes('te laat') &&
+    (item.notify_on_low_stock !== false) // Only show if explicitly enabled or not set (defaults to true)
   );
 
   if (isLoading) {
