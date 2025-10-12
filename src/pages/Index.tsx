@@ -3,13 +3,12 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
-import Leaderboard from '@/components/Leaderboard';
 import TopUpDialog from '@/components/TopUpDialog';
 import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, Settings, Eye, TrendingUp, CreditCard, Clock } from 'lucide-react';
+import { LogOut, History, Settings, Eye, CreditCard, Clock } from 'lucide-react';
 import LateFeeDialog from '@/components/LateFeeDialog';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -176,15 +175,12 @@ const Index = () => {
           balance={balance}
           onDrinkLogged={handleRefreshBalance}
         />
-        
-        {/* Leaderboard */}
-        <Leaderboard />
       </main>
       
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-          <div className="grid grid-cols-4 gap-1 p-2">
+          <div className="grid grid-cols-3 gap-1 p-2">
             <Button
               variant="ghost"
               size="sm"
@@ -205,21 +201,6 @@ const Index = () => {
                 <span className="text-xs">Opladen</span>
               </Button>
             </TopUpDialog>
-            
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-col h-16 space-y-1"
-              onClick={() => {
-                const leaderboardElement = document.querySelector('[data-testid="leaderboard"]');
-                if (leaderboardElement) {
-                  leaderboardElement.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-            >
-              <TrendingUp className="h-5 w-5" />
-              <span className="text-xs">Leaderboard</span>
-            </Button>
             
             <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
               <Button
