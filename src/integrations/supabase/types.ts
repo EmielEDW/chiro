@@ -340,6 +340,81 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_audit_items: {
+        Row: {
+          actual_quantity: number
+          audit_id: string
+          created_at: string
+          difference: number
+          expected_quantity: number
+          id: string
+          item_id: string
+          notes: string | null
+        }
+        Insert: {
+          actual_quantity: number
+          audit_id: string
+          created_at?: string
+          difference: number
+          expected_quantity: number
+          id?: string
+          item_id: string
+          notes?: string | null
+        }
+        Update: {
+          actual_quantity?: number
+          audit_id?: string
+          created_at?: string
+          difference?: number
+          expected_quantity?: number
+          id?: string
+          item_id?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_audit_items_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "stock_audits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_audit_items_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_audits: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       stock_transactions: {
         Row: {
           created_at: string
