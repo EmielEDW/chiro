@@ -340,6 +340,71 @@ export type Database = {
         }
         Relationships: []
       }
+      restock_items: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          new_quantity: number
+          notes: string | null
+          previous_quantity: number
+          quantity_change: number
+          restock_session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          new_quantity: number
+          notes?: string | null
+          previous_quantity: number
+          quantity_change: number
+          restock_session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          new_quantity?: number
+          notes?: string | null
+          previous_quantity?: number
+          quantity_change?: number
+          restock_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restock_items_restock_session_id_fkey"
+            columns: ["restock_session_id"]
+            isOneToOne: false
+            referencedRelation: "restock_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restock_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          notes: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          notes?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       stock_audit_items: {
         Row: {
           actual_quantity: number
