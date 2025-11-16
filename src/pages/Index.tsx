@@ -10,12 +10,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, Settings, Eye, CreditCard, Clock } from 'lucide-react';
 import LateFeeDialog from '@/components/LateFeeDialog';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useEffect, useState } from 'react';
-import { NotificationBell } from '@/components/NotificationBell';
-import { UnreadNotificationAlert } from '@/components/UnreadNotificationAlert';
-import { useSystemSettings } from '@/hooks/useSystemSettings';
+import { useState } from 'react';
 
 const Index = () => {
   const { user } = useAuth();
@@ -23,23 +20,7 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const location = useLocation();
-  const { isLateFeeEnabled } = useSystemSettings();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [topUpOpen, setTopUpOpen] = useState(false);
-  const [topUpInitialAmount, setTopUpInitialAmount] = useState<number | undefined>();
-
-  // Handle opening top-up from notification
-  useEffect(() => {
-    if (location.state?.openTopUp) {
-      setTopUpOpen(true);
-      if (location.state?.amount) {
-        setTopUpInitialAmount(location.state.amount);
-      }
-      // Clear the state
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.state, navigate, location.pathname]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -74,8 +55,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <UnreadNotificationAlert />
-      
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-50 transition-opacity duration-300" id="main-header">
         <div className="container mx-auto px-4 py-3">
@@ -108,8 +87,6 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
                 </div>
               </div>
-              
-              <NotificationBell />
               
               {profile?.role === 'admin' && (
                 <Button
@@ -154,11 +131,7 @@ const Index = () => {
         </div>
 
         {/* Balance Card */}
-        <TopUpDialog 
-          open={topUpOpen} 
-          onOpenChange={setTopUpOpen}
-          initialAmount={topUpInitialAmount}
-        >
+        <TopUpDialog>
           <div className="w-full">
             <BalanceCard 
               balance={balance} 
@@ -169,7 +142,7 @@ const Index = () => {
 
         {/* Quick Actions - Only show on desktop */}
         {!isMobile && (
-          <div className={`grid ${isLateFeeEnabled ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+          <div className="grid grid-cols-2 gap-4">
             <Button 
               variant="outline" 
               className="h-16 flex-col space-y-1"
@@ -179,17 +152,15 @@ const Index = () => {
               <span className="text-sm">Geschiedenis</span>
             </Button>
             
-            {isLateFeeEnabled && (
-              <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
-                <Button 
-                  variant="outline" 
-                  className="h-16 flex-col space-y-1"
-                >
-                  <Clock className="h-5 w-5" />
-                  <span className="text-sm">Te laat</span>
-                </Button>
-              </LateFeeDialog>
-            )}
+            <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
+              <Button 
+                variant="outline" 
+                className="h-16 flex-col space-y-1"
+              >
+                <Clock className="h-5 w-5" />
+                <span className="text-sm">Te laat</span>
+              </Button>
+            </LateFeeDialog>
           </div>
         )}
 

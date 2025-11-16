@@ -286,75 +286,6 @@ export type Database = {
           },
         ]
       }
-      notifications: {
-        Row: {
-          acknowledged_at: string | null
-          action_type: string
-          created_at: string
-          created_by: string
-          id: string
-          message: string
-          metadata: Json | null
-          payment_amount_cents: number | null
-          payment_status: string | null
-          read: boolean
-          read_at: string | null
-          requires_acknowledgment: boolean
-          title: string
-          type: string
-          user_id: string | null
-        }
-        Insert: {
-          acknowledged_at?: string | null
-          action_type?: string
-          created_at?: string
-          created_by: string
-          id?: string
-          message: string
-          metadata?: Json | null
-          payment_amount_cents?: number | null
-          payment_status?: string | null
-          read?: boolean
-          read_at?: string | null
-          requires_acknowledgment?: boolean
-          title: string
-          type: string
-          user_id?: string | null
-        }
-        Update: {
-          acknowledged_at?: string | null
-          action_type?: string
-          created_at?: string
-          created_by?: string
-          id?: string
-          message?: string
-          metadata?: Json | null
-          payment_amount_cents?: number | null
-          payment_status?: string | null
-          read?: boolean
-          read_at?: string | null
-          requires_acknowledgment?: boolean
-          title?: string
-          type?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "notifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           active: boolean
@@ -587,33 +518,6 @@ export type Database = {
           },
         ]
       }
-      system_settings: {
-        Row: {
-          description: string | null
-          id: string
-          setting_key: string
-          setting_value: Json
-          updated_at: string | null
-          updated_by: string | null
-        }
-        Insert: {
-          description?: string | null
-          id?: string
-          setting_key: string
-          setting_value: Json
-          updated_at?: string | null
-          updated_by?: string | null
-        }
-        Update: {
-          description?: string | null
-          id?: string
-          setting_key?: string
-          setting_value?: Json
-          updated_at?: string | null
-          updated_by?: string | null
-        }
-        Relationships: []
-      }
       top_ups: {
         Row: {
           amount_cents: number
@@ -759,13 +663,22 @@ export type Database = {
         Args: { mixed_drink_item_id: string }
         Returns: number
       }
-      calculate_user_balance: { Args: { user_uuid: string }; Returns: number }
+      calculate_user_balance: {
+        Args: { user_uuid: string }
+        Returns: number
+      }
       create_temp_guest_account: {
         Args: { _guest_name: string }
         Returns: string
       }
-      free_guest_account: { Args: { _guest_id: string }; Returns: boolean }
-      get_current_user_role: { Args: never; Returns: string }
+      free_guest_account: {
+        Args: { _guest_id: string }
+        Returns: boolean
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       grant_user_role: {
         Args: {
           _new_role: Database["public"]["Enums"]["user_role"]
