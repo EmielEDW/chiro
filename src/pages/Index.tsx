@@ -55,7 +55,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-card border-b fixed top-0 left-0 right-0 z-50" id="main-header">
+      <header className="bg-card border-b" id="main-header">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -110,7 +110,7 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-6 space-y-6 pt-20">
+      <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Balance Card */}
         <TopUpDialog>
           <div className="w-full">
