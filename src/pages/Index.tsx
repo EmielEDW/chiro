@@ -13,6 +13,7 @@ import LateFeeDialog from '@/components/LateFeeDialog';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const Index = () => {
   const { user } = useAuth();
@@ -87,6 +88,8 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
                 </div>
               </div>
+              
+              <NotificationBell />
               
               {profile?.role === 'admin' && (
                 <Button
