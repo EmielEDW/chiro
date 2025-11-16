@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useEffect, useState } from 'react';
 import { NotificationBell } from '@/components/NotificationBell';
 import { UnreadNotificationAlert } from '@/components/UnreadNotificationAlert';
+import { useSystemSettings } from '@/hooks/useSystemSettings';
 
 const Index = () => {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const location = useLocation();
+  const { isLateFeeEnabled } = useSystemSettings();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [topUpInitialAmount, setTopUpInitialAmount] = useState<number | undefined>();
@@ -167,7 +169,7 @@ const Index = () => {
 
         {/* Quick Actions - Only show on desktop */}
         {!isMobile && (
-          <div className="grid grid-cols-2 gap-4">
+          <div className={`grid ${isLateFeeEnabled ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
             <Button 
               variant="outline" 
               className="h-16 flex-col space-y-1"
@@ -177,15 +179,17 @@ const Index = () => {
               <span className="text-sm">Geschiedenis</span>
             </Button>
             
-            <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
-              <Button 
-                variant="outline" 
-                className="h-16 flex-col space-y-1"
-              >
-                <Clock className="h-5 w-5" />
-                <span className="text-sm">Te laat</span>
-              </Button>
-            </LateFeeDialog>
+            {isLateFeeEnabled && (
+              <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
+                <Button 
+                  variant="outline" 
+                  className="h-16 flex-col space-y-1"
+                >
+                  <Clock className="h-5 w-5" />
+                  <span className="text-sm">Te laat</span>
+                </Button>
+              </LateFeeDialog>
+            )}
           </div>
         )}
 
