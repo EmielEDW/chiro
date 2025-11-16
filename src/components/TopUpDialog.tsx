@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,9 +12,12 @@ import { useProfile } from '@/hooks/useProfile';
 
 interface TopUpDialogProps {
   children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  initialAmount?: number;
 }
 
-const TopUpDialog = ({ children }: TopUpDialogProps) => {
+const TopUpDialog = ({ children, open: externalOpen, onOpenChange, initialAmount }: TopUpDialogProps) => {
   const [amount, setAmount] = useState('');
   const [customAmount, setCustomAmount] = useState('');
   const [method, setMethod] = useState<string>('');
@@ -22,6 +25,23 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { refreshBalance, profile } = useProfile();
+
+  // Use external open state if provided, otherwise use internal state
+  const dialogOpen = externalOpen !== undefined ? externalOpen : isOpen;
+  const setDialogOpen = (open: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(open);
+    } else {
+      setIsOpen(open);
+    }
+  };
+
+  // Set initial amount when provided
+  useEffect(() => {
+    if (initialAmount && dialogOpen) {
+      setCustomAmount(initialAmount.toString());
+    }
+  }, [initialAmount, dialogOpen]);
 
   const quickAmounts = [25, 50];
   
@@ -74,7 +94,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         description: "Maak een overschrijving naar het opgegeven rekeningnummer. Je saldo wordt handmatig bijgewerkt door de admin.",
         duration: 8000,
       });
-        setIsOpen(false);
+        setDialogOpen(false);
         setAmount('');
         setCustomAmount('');
         setMethod('');
@@ -94,7 +114,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         // Redirect to Stripe checkout in same tab
         window.location.href = data.url;
         
-        setIsOpen(false);
+        setDialogOpen(false);
         setAmount('');
         setCustomAmount('');
         setMethod('');
@@ -121,7 +141,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>

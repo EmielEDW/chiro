@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Bell } from 'lucide-react';
+import { Bell, AlertCircle, DollarSign, Info, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import {
   Sheet,
   SheetContent,
@@ -21,6 +22,11 @@ interface Notification {
   title: string;
   message: string;
   type: 'personal' | 'announcement';
+  action_type: 'announcement' | 'payment_request' | 'reminder' | 'alert' | 'info';
+  payment_amount_cents: number | null;
+  payment_status: 'pending' | 'paid' | 'cancelled' | null;
+  requires_acknowledgment: boolean;
+  acknowledged_at: string | null;
   created_at: string;
   read: boolean;
   read_at: string | null;
@@ -30,6 +36,7 @@ export const NotificationBell = () => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications'],
@@ -99,9 +106,35 @@ export const NotificationBell = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const handlePaymentRequest = (notification: Notification) => {
+    if (notification.payment_amount_cents && notification.payment_status === 'pending') {
+      // Mark as read and navigate to pay
+      if (!notification.read) {
+        markAsReadMutation.mutate(notification.id);
+      }
+      setOpen(false);
+      navigate('/', { state: { openTopUp: true, amount: notification.payment_amount_cents / 100 } });
+    }
+  };
+
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.read) {
       markAsReadMutation.mutate(notification.id);
+    }
+  };
+
+  const getActionIcon = (actionType: string) => {
+    switch (actionType) {
+      case 'payment_request':
+        return <DollarSign className="h-4 w-4 text-green-500" />;
+      case 'alert':
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      case 'reminder':
+        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+      case 'info':
+        return <Info className="h-4 w-4 text-blue-500" />;
+      default:
+        return null;
     }
   };
 
@@ -155,12 +188,15 @@ export const NotificationBell = () => {
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                     notification.read 
                       ? 'bg-background hover:bg-accent/50' 
+                      : notification.action_type === 'alert' || notification.requires_acknowledgment
+                      ? 'bg-destructive/10 hover:bg-destructive/20 border-destructive/30'
                       : 'bg-accent/20 hover:bg-accent/30'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
+                        {getActionIcon(notification.action_type)}
                         <h4 className="font-semibold text-sm">{notification.title}</h4>
                         {!notification.read && (
                           <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
@@ -169,6 +205,30 @@ export const NotificationBell = () => {
                       <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">
                         {notification.message}
                       </p>
+                      
+                      {notification.action_type === 'payment_request' && notification.payment_amount_cents && (
+                        <div className="mt-3 flex items-center gap-2">
+                          <Badge variant={notification.payment_status === 'paid' ? 'default' : 'outline'} className="gap-1">
+                            <DollarSign className="h-3 w-3" />
+                            €{(notification.payment_amount_cents / 100).toFixed(2)}
+                          </Badge>
+                          {notification.payment_status === 'pending' && (
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handlePaymentRequest(notification);
+                              }}
+                            >
+                              Betalen
+                            </Button>
+                          )}
+                          {notification.payment_status === 'paid' && (
+                            <span className="text-xs text-green-600 font-medium">✓ Betaald</span>
+                          )}
+                        </div>
+                      )}
+                      
                       <div className="flex items-center gap-2 mt-2">
                         <p className="text-xs text-muted-foreground">
                           {format(new Date(notification.created_at), 'dd MMM yyyy HH:mm', { locale: nl })}
@@ -176,6 +236,11 @@ export const NotificationBell = () => {
                         {notification.type === 'announcement' && (
                           <Badge variant="secondary" className="text-xs">
                             Algemeen
+                          </Badge>
+                        )}
+                        {notification.requires_acknowledgment && !notification.acknowledged_at && (
+                          <Badge variant="destructive" className="text-xs">
+                            Bevestiging vereist
                           </Badge>
                         )}
                       </div>

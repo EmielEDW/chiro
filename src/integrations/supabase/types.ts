@@ -288,34 +288,52 @@ export type Database = {
       }
       notifications: {
         Row: {
+          acknowledged_at: string | null
+          action_type: string
           created_at: string
           created_by: string
           id: string
           message: string
+          metadata: Json | null
+          payment_amount_cents: number | null
+          payment_status: string | null
           read: boolean
           read_at: string | null
+          requires_acknowledgment: boolean
           title: string
           type: string
           user_id: string | null
         }
         Insert: {
+          acknowledged_at?: string | null
+          action_type?: string
           created_at?: string
           created_by: string
           id?: string
           message: string
+          metadata?: Json | null
+          payment_amount_cents?: number | null
+          payment_status?: string | null
           read?: boolean
           read_at?: string | null
+          requires_acknowledgment?: boolean
           title: string
           type: string
           user_id?: string | null
         }
         Update: {
+          acknowledged_at?: string | null
+          action_type?: string
           created_at?: string
           created_by?: string
           id?: string
           message?: string
+          metadata?: Json | null
+          payment_amount_cents?: number | null
+          payment_status?: string | null
           read?: boolean
           read_at?: string | null
+          requires_acknowledgment?: boolean
           title?: string
           type?: string
           user_id?: string | null

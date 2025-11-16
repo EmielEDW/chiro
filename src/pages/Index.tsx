@@ -10,10 +10,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, Settings, Eye, CreditCard, Clock } from 'lucide-react';
 import LateFeeDialog from '@/components/LateFeeDialog';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NotificationBell } from '@/components/NotificationBell';
+import { UnreadNotificationAlert } from '@/components/UnreadNotificationAlert';
 
 const Index = () => {
   const { user } = useAuth();
@@ -21,7 +22,22 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const location = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const [topUpInitialAmount, setTopUpInitialAmount] = useState<number | undefined>();
+
+  // Handle opening top-up from notification
+  useEffect(() => {
+    if (location.state?.openTopUp) {
+      setTopUpOpen(true);
+      if (location.state?.amount) {
+        setTopUpInitialAmount(location.state.amount);
+      }
+      // Clear the state
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -56,6 +72,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <UnreadNotificationAlert />
+      
       {/* Header */}
       <header className="bg-card border-b sticky top-0 z-50 transition-opacity duration-300" id="main-header">
         <div className="container mx-auto px-4 py-3">
@@ -134,7 +152,11 @@ const Index = () => {
         </div>
 
         {/* Balance Card */}
-        <TopUpDialog>
+        <TopUpDialog 
+          open={topUpOpen} 
+          onOpenChange={setTopUpOpen}
+          initialAmount={topUpInitialAmount}
+        >
           <div className="w-full">
             <BalanceCard 
               balance={balance} 

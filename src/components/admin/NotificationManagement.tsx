@@ -14,8 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Send, Users, User } from 'lucide-react';
+import { Send, Users, User, DollarSign, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 
 interface Profile {
   id: string;
@@ -29,6 +30,9 @@ export const NotificationManagement = () => {
   const [message, setMessage] = useState('');
   const [recipientType, setRecipientType] = useState<'all' | 'individual'>('all');
   const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [actionType, setActionType] = useState<'announcement' | 'payment_request' | 'reminder' | 'alert' | 'info'>('announcement');
+  const [paymentAmount, setPaymentAmount] = useState<string>('');
+  const [requiresAcknowledgment, setRequiresAcknowledgment] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -52,6 +56,8 @@ export const NotificationManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Niet ingelogd');
 
+      const paymentAmountCents = paymentAmount ? Math.round(parseFloat(paymentAmount) * 100) : null;
+
       if (recipientType === 'all') {
         // Send announcement to all users
         const { error } = await supabase
@@ -60,8 +66,12 @@ export const NotificationManagement = () => {
             title,
             message,
             type: 'announcement',
+            action_type: actionType,
             created_by: user.id,
             user_id: null, // null means it's for everyone
+            payment_amount_cents: paymentAmountCents,
+            payment_status: paymentAmountCents ? 'pending' : null,
+            requires_acknowledgment: requiresAcknowledgment,
           });
 
         if (error) throw error;
@@ -75,8 +85,12 @@ export const NotificationManagement = () => {
             title,
             message,
             type: 'personal',
+            action_type: actionType,
             created_by: user.id,
             user_id: selectedUserId,
+            payment_amount_cents: paymentAmountCents,
+            payment_status: paymentAmountCents ? 'pending' : null,
+            requires_acknowledgment: requiresAcknowledgment,
           });
 
         if (error) throw error;
@@ -94,6 +108,9 @@ export const NotificationManagement = () => {
       setMessage('');
       setRecipientType('all');
       setSelectedUserId('');
+      setActionType('announcement');
+      setPaymentAmount('');
+      setRequiresAcknowledgment(false);
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
     onError: (error) => {
@@ -190,6 +207,50 @@ export const NotificationManagement = () => {
           )}
 
           <div className="space-y-2">
+            <Label htmlFor="action-type">Type melding</Label>
+            <Select
+              value={actionType}
+              onValueChange={(value: any) => setActionType(value)}
+            >
+              <SelectTrigger id="action-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="announcement">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>Aankondiging</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="payment_request">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    <span>Betalingsverzoek</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="reminder">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>Herinnering</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="alert">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Waarschuwing</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="info">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    <span>Informatie</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="title">Titel</Label>
             <Input
               id="title"
@@ -213,6 +274,41 @@ export const NotificationManagement = () => {
             <p className="text-xs text-muted-foreground">
               {message.length}/1000 karakters
             </p>
+          </div>
+
+          {actionType === 'payment_request' && (
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Betalingsbedrag (optioneel)</Label>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">€</span>
+                <Input
+                  id="payment-amount"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={paymentAmount}
+                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  placeholder="0.00"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Laat leeg voor een betalingsverzoek zonder specifiek bedrag
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-0.5">
+              <Label htmlFor="requires-ack">Bevestiging vereist</Label>
+              <p className="text-xs text-muted-foreground">
+                Gebruiker moet deze melding bevestigen voordat ze verder kunnen
+              </p>
+            </div>
+            <Switch
+              id="requires-ack"
+              checked={requiresAcknowledgment}
+              onCheckedChange={setRequiresAcknowledgment}
+            />
           </div>
 
           <div className="flex items-center gap-2">
