@@ -8,8 +8,7 @@ import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, Settings, Eye, CreditCard, Clock } from 'lucide-react';
-import LateFeeDialog from '@/components/LateFeeDialog';
+import { LogOut, History, Settings, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
@@ -112,16 +111,6 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Greeting */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold">
-            Hallo, {profile?.name?.split(' ')[0] || 'daar'}! 👋
-          </h2>
-          <p className="text-muted-foreground">
-            Welkom terug bij je digitale drankkaart
-          </p>
-        </div>
-
         {/* Balance Card */}
         <TopUpDialog>
           <div className="w-full">
@@ -134,26 +123,14 @@ const Index = () => {
 
         {/* Quick Actions - Only show on desktop */}
         {!isMobile && (
-          <div className="grid grid-cols-2 gap-4">
-            <Button 
-              variant="outline" 
-              className="h-16 flex-col space-y-1"
-              onClick={() => navigate('/history')}
-            >
-              <History className="h-5 w-5" />
-              <span className="text-sm">Geschiedenis</span>
-            </Button>
-            
-            <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
-              <Button 
-                variant="outline" 
-                className="h-16 flex-col space-y-1"
-              >
-                <Clock className="h-5 w-5" />
-                <span className="text-sm">Te laat</span>
-              </Button>
-            </LateFeeDialog>
-          </div>
+          <Button 
+            variant="outline" 
+            className="h-16 flex-col space-y-1"
+            onClick={() => navigate('/history')}
+          >
+            <History className="h-5 w-5" />
+            <span className="text-sm">Geschiedenis</span>
+          </Button>
         )}
 
         {/* Mobile Category Filter */}
@@ -172,7 +149,7 @@ const Index = () => {
       {/* Mobile Bottom Navigation */}
       {isMobile && (
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
-          <div className="grid grid-cols-3 gap-1 p-2">
+          <div className="grid grid-cols-2 gap-1 p-2">
             <Button
               variant="ghost"
               size="sm"
@@ -193,17 +170,6 @@ const Index = () => {
                 <span className="text-xs">Opladen</span>
               </Button>
             </TopUpDialog>
-            
-            <LateFeeDialog onLateFeeProcessed={handleRefreshBalance}>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-16 space-y-1"
-              >
-                <Clock className="h-5 w-5" />
-                <span className="text-xs">Te laat</span>
-              </Button>
-            </LateFeeDialog>
           </div>
         </div>
       )}
