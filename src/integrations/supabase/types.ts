@@ -286,6 +286,57 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          message: string
+          read: boolean
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          message: string
+          read?: boolean
+          read_at?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          message?: string
+          read?: boolean
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           active: boolean
@@ -663,22 +714,13 @@ export type Database = {
         Args: { mixed_drink_item_id: string }
         Returns: number
       }
-      calculate_user_balance: {
-        Args: { user_uuid: string }
-        Returns: number
-      }
+      calculate_user_balance: { Args: { user_uuid: string }; Returns: number }
       create_temp_guest_account: {
         Args: { _guest_name: string }
         Returns: string
       }
-      free_guest_account: {
-        Args: { _guest_id: string }
-        Returns: boolean
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      free_guest_account: { Args: { _guest_id: string }; Returns: boolean }
+      get_current_user_role: { Args: never; Returns: string }
       grant_user_role: {
         Args: {
           _new_role: Database["public"]["Enums"]["user_role"]
