@@ -125,11 +125,12 @@ const Index = () => {
         {!isMobile && (
           <Button 
             variant="outline" 
-            className="h-16 flex-col space-y-1"
+            size="lg"
+            className="w-full"
             onClick={() => navigate('/history')}
           >
             <History className="h-5 w-5" />
-            <span className="text-sm">Geschiedenis</span>
+            <span>Geschiedenis</span>
           </Button>
         )}
 
