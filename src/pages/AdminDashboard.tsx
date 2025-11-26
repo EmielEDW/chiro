@@ -26,6 +26,7 @@ import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard'
 import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
 import GuestTabManagement from '@/components/admin/GuestTabManagement';
 import { AdjustmentHistory } from '@/components/admin/AdjustmentHistory';
+import { AdminNotepad } from '@/components/admin/AdminNotepad';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -162,6 +163,7 @@ const AdminDashboard = () => {
           <TabsContent value="analytics" className="space-y-6">
             <SalesDetailsDashboard />
             <AdjustmentHistory />
+            <AdminNotepad />
           </TabsContent>
         </Tabs>
 
