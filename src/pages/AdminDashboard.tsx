@@ -25,6 +25,7 @@ import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
 import GuestTabManagement from '@/components/admin/GuestTabManagement';
+import { AdjustmentHistory } from '@/components/admin/AdjustmentHistory';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -158,8 +159,9 @@ const AdminDashboard = () => {
             <StockAudits />
           </TabsContent>
           
-          <TabsContent value="analytics">
+          <TabsContent value="analytics" className="space-y-6">
             <SalesDetailsDashboard />
+            <AdjustmentHistory />
           </TabsContent>
         </Tabs>
 
