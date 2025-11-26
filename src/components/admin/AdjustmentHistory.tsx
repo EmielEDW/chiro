@@ -14,9 +14,9 @@ export const AdjustmentHistory = () => {
         .from("adjustments")
         .select(`
           *,
-          user:profiles!adjustments_user_id_fkey(id, name, email),
-          creator:profiles!adjustments_created_by_fkey(id, name, email)
+          user:profiles!adjustments_user_id_fkey(id, name, email)
         `)
+        .not("reason", "ilike", "Foutje teruggedraaid:%")
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -51,7 +51,6 @@ export const AdjustmentHistory = () => {
               <TableHead>Gebruiker</TableHead>
               <TableHead>Bedrag</TableHead>
               <TableHead>Reden</TableHead>
-              <TableHead>Door Admin</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -80,14 +79,6 @@ export const AdjustmentHistory = () => {
                 </TableCell>
                 <TableCell className="max-w-md">
                   <span className="text-sm">{adjustment.reason}</span>
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    <div>{adjustment.creator?.name}</div>
-                    <div className="text-muted-foreground">
-                      {adjustment.creator?.email}
-                    </div>
-                  </div>
                 </TableCell>
               </TableRow>
             ))}
