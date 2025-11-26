@@ -158,12 +158,12 @@ const AdminDashboard = () => {
             <ProductManagement />
             <RestockSessions />
             <StockAudits />
+            <AdminNotepad />
           </TabsContent>
           
           <TabsContent value="analytics" className="space-y-6">
             <SalesDetailsDashboard />
             <AdjustmentHistory />
-            <AdminNotepad />
           </TabsContent>
         </Tabs>
 
