@@ -711,67 +711,49 @@ const ProductManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Naam</TableHead>
+                <TableHead>Product</TableHead>
                 <TableHead>Categorie</TableHead>
-                <TableHead>Prijs</TableHead>
-                <TableHead>Kostprijs</TableHead>
-                <TableHead>Winst</TableHead>
                 <TableHead>Voorraad</TableHead>
                 <TableHead>Acties</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => {
-                const profit = item.price_cents - (item.purchase_price_cents || 0);
-                return (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        {item.image_url && (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="h-10 w-10 rounded object-cover"
-                          />
-                        )}
-                        <div>
-                          <div className="font-medium">{item.name}</div>
-                          {item.description && (
-                            <div className="text-xs text-muted-foreground">
-                              {item.description}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{getCategoryBadge(item.category)}</TableCell>
-                    <TableCell>{formatCurrency(item.price_cents)}</TableCell>
-                    <TableCell>{formatCurrency(item.purchase_price_cents || 0)}</TableCell>
-                    <TableCell className={profit >= 0 ? 'text-success' : 'text-destructive'}>
-                      {formatCurrency(profit)}
-                    </TableCell>
-                    <TableCell>{item.stock_quantity || 0}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(item)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteItem.mutate(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {items.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      {item.image_url && (
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="h-10 w-10 rounded object-cover"
+                        />
+                      )}
+                      <span className="font-medium">{item.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getCategoryBadge(item.category)}</TableCell>
+                  <TableCell>{item.stock_quantity || 0}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => openEditDialog(item)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteItem.mutate(item.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </div>
