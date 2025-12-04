@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserCog } from 'lucide-react';
+import { Loader2, Shield } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface RoleManagementProps {
   userId: string;
   userName: string;
   currentRole: string;
+  asMenuItem?: boolean;
 }
 
-const RoleManagement = ({ userId, userName, currentRole }: RoleManagementProps) => {
+const RoleManagement = ({ userId, userName, currentRole, asMenuItem = false }: RoleManagementProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newRole, setNewRole] = useState<string>(currentRole);
   const [loading, setLoading] = useState(false);
@@ -52,7 +52,6 @@ const RoleManagement = ({ userId, userName, currentRole }: RoleManagementProps) 
         description: `${userName} is nu ${newRole === 'admin' ? 'admin' : newRole === 'treasurer' ? 'penningmeester' : 'gebruiker'}.`,
       });
 
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['user-balances'] });
       
@@ -71,10 +70,17 @@ const RoleManagement = ({ userId, userName, currentRole }: RoleManagementProps) 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <UserCog className="h-4 w-4 mr-2" />
-          Rol wijzigen
-        </Button>
+        {asMenuItem ? (
+          <Button variant="ghost" size="sm" className="w-full justify-start">
+            <Shield className="h-4 w-4 mr-2" />
+            Rol wijzigen
+          </Button>
+        ) : (
+          <Button variant="outline" size="sm">
+            <Shield className="h-4 w-4 mr-2" />
+            Rol wijzigen
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

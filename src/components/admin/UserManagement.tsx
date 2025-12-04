@@ -12,9 +12,10 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Eye, CreditCard, History, UserX } from 'lucide-react';
+import { History, MoreHorizontal, Shield, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import UserConsumptionHistory from './UserConsumptionHistory';
@@ -36,6 +37,8 @@ interface Profile {
 const UserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [showFinalDeleteConfirm, setShowFinalDeleteConfirm] = useState<string | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -67,17 +70,6 @@ const UserManagement = () => {
     enabled: users.length > 0,
   });
 
-  const getRoleBadge = (role: string) => {
-    switch (role) {
-      case 'admin':
-        return <Badge variant="destructive">Admin</Badge>;
-      case 'treasurer':
-        return <Badge variant="secondary">Penningmeester</Badge>;
-      default:
-        return <Badge variant="outline">Gebruiker</Badge>;
-    }
-  };
-
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
   };
@@ -86,8 +78,6 @@ const UserManagement = () => {
     setDeletingUserId(userId);
     try {
       if (isGuest) {
-        // For guest accounts, just delete the profile record
-        // Consumptions and other data are preserved for statistics
         const { error } = await supabase
           .from('profiles')
           .delete()
@@ -100,7 +90,6 @@ const UserManagement = () => {
           description: `${userName} is verwijderd. Alle transacties blijven bewaard voor statistieken.`,
         });
       } else {
-        // For regular users, call edge function to delete from auth.users and profiles  
         const { data: result, error: invokeError } = await supabase.functions.invoke('delete-user', {
           body: { userId }
         });
@@ -115,7 +104,6 @@ const UserManagement = () => {
         });
       }
 
-      // Refresh the users list by invalidating queries
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['user-balances'] });
     } catch (error: any) {
@@ -126,6 +114,8 @@ const UserManagement = () => {
       });
     } finally {
       setDeletingUserId(null);
+      setShowDeleteConfirm(null);
+      setShowFinalDeleteConfirm(null);
     }
   };
 
@@ -143,149 +133,207 @@ const UserManagement = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Gebruikers beheer</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Beheer alle geregistreerde gebruikers en hun saldo's
-        </p>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Gebruiker</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Saldo</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Acties</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {user.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-medium">
-                        {user.guest_account && user.occupied_by_name 
-                          ? `${user.occupied_by_name} (${user.name})`
-                          : user.name
-                        }
-                        {user.guest_account && (
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            Gast
-                          </Badge>
-                        )}
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gebruikers beheer</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Beheer alle geregistreerde gebruikers en hun saldo's
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Gebruiker</TableHead>
+                  <TableHead>Saldo</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Acties</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {user.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {user.guest_account && user.occupied_by_name 
+                              ? `${user.occupied_by_name} (${user.name})`
+                              : user.name
+                            }
+                            {user.role === 'admin' && (
+                              <span className="h-2.5 w-2.5 rounded-full bg-destructive" title="Admin" />
+                            )}
+                            {user.role === 'treasurer' && (
+                              <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="Penningmeester" />
+                            )}
+                            {user.guest_account && (
+                              <Badge variant="outline" className="ml-1 text-xs">
+                                Gast
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {user.guest_account 
+                              ? `Gast #${user.guest_number}`
+                              : `Lid sinds ${new Date(user.created_at).toLocaleDateString('nl-BE')}`
+                            }
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {user.guest_account 
-                          ? `Gast #${user.guest_number}`
-                          : `Lid sinds ${new Date(user.created_at).toLocaleDateString('nl-BE')}`
-                        }
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>{getRoleBadge(user.role)}</TableCell>
-                  <TableCell>
-                    <span className={`font-medium ${
-                      (balances[user.id] || 0) < 0 ? 'text-destructive' : 'text-success'
-                    }`}>
-                      {formatCurrency(balances[user.id] || 0)}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={user.active ? "default" : "secondary"}>
-                      {user.active ? "Actief" : "Inactief"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => setSelectedUserId(user.id)}
-                          >
-                            <History className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Consumptie geschiedenis - {user.name}</DialogTitle>
-                          </DialogHeader>
-                          {selectedUserId && (
-                            <UserConsumptionHistory userId={selectedUserId} />
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      
-                      <BalanceAdjustmentDialog
-                        userId={user.id}
-                        userName={user.name}
-                        currentBalance={balances[user.id] || 0}
-                      />
-                      
-                      {!user.guest_account && (
-                        <RoleManagement
+                    </TableCell>
+                    <TableCell>
+                      <span className={`font-medium ${
+                        (balances[user.id] || 0) < 0 ? 'text-destructive' : 'text-success'
+                      }`}>
+                        {formatCurrency(balances[user.id] || 0)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.active ? "default" : "secondary"}>
+                        {user.active ? "Actief" : "Inactief"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => setSelectedUserId(user.id)}
+                              title="Geschiedenis"
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Consumptie geschiedenis - {user.name}</DialogTitle>
+                            </DialogHeader>
+                            {selectedUserId && (
+                              <UserConsumptionHistory userId={selectedUserId} />
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        
+                        <BalanceAdjustmentDialog
                           userId={user.id}
                           userName={user.name}
-                          currentRole={user.role}
+                          currentBalance={balances[user.id] || 0}
                         />
-                      )}
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            title="Gebruiker verwijderen"
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {user.guest_account ? 'Gastaccount verwijderen' : 'Gebruiker verwijderen'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Weet je zeker dat je <strong>{user.name}</strong> wilt verwijderen?
-                              {user.guest_account 
-                                ? ' Het gastaccount wordt verwijderd, maar alle transacties blijven bewaard voor statistieken.'
-                                : ' Deze actie kan niet ongedaan worden gemaakt. Alle data van deze gebruiker wordt permanent verwijderd.'
-                              }
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteUser(user.id, user.name, user.guest_account)}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              disabled={deletingUserId === user.id}
-                            >
-                              {deletingUserId === user.id ? 'Verwijderen...' : 'Verwijderen'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                        
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="sm" title="Meer opties">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-48 p-2" align="end">
+                            <div className="flex flex-col gap-1">
+                              {!user.guest_account && (
+                                <RoleManagement
+                                  userId={user.id}
+                                  userName={user.name}
+                                  currentRole={user.role}
+                                  asMenuItem
+                                />
+                              )}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => setShowDeleteConfirm(user.id)}
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Verwijderen
+                              </Button>
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* First confirmation dialog */}
+      <AlertDialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {users.find(u => u.id === showDeleteConfirm)?.guest_account 
+                ? 'Gastaccount verwijderen' 
+                : 'Gebruiker verwijderen'
+              }
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Weet je zeker dat je <strong>{users.find(u => u.id === showDeleteConfirm)?.name}</strong> wilt verwijderen?
+              {users.find(u => u.id === showDeleteConfirm)?.guest_account 
+                ? ' Het gastaccount wordt verwijderd, maar alle transacties blijven bewaard voor statistieken.'
+                : ' Deze actie kan niet ongedaan worden gemaakt.'
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                setShowFinalDeleteConfirm(showDeleteConfirm);
+                setShowDeleteConfirm(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Doorgaan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Final confirmation dialog */}
+      <AlertDialog open={!!showFinalDeleteConfirm} onOpenChange={(open) => !open && setShowFinalDeleteConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              Laatste bevestiging
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Dit is je laatste kans om te annuleren. 
+              <strong className="block mt-2">
+                {users.find(u => u.id === showFinalDeleteConfirm)?.name}
+              </strong> 
+              wordt permanent verwijderd.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                const user = users.find(u => u.id === showFinalDeleteConfirm);
+                if (user) {
+                  handleDeleteUser(user.id, user.name, user.guest_account);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingUserId === showFinalDeleteConfirm}
+            >
+              {deletingUserId === showFinalDeleteConfirm ? 'Verwijderen...' : 'Definitief verwijderen'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
