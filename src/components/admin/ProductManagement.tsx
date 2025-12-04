@@ -35,6 +35,16 @@ interface MixedDrinkComponent {
   component_name?: string;
 }
 
+const CATEGORY_ORDER = [
+  { value: 'all', label: 'Alles' },
+  { value: 'frisdranken', label: 'Frisdranken' },
+  { value: 'bieren', label: 'Bieren' },
+  { value: 'sterke_dranken', label: 'Sterke dranken' },
+  { value: 'mixed_drinks', label: 'Mixed Drinks' },
+  { value: 'chips', label: 'Chips' },
+  { value: 'andere', label: 'Andere' },
+];
+
 const ProductManagement = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -42,6 +52,7 @@ const ProductManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<MixedDrinkComponent[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState('all');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -707,6 +718,18 @@ const ProductManagement = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {CATEGORY_ORDER.map((cat) => (
+            <Button
+              key={cat.value}
+              variant={categoryFilter === cat.value ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setCategoryFilter(cat.value)}
+            >
+              {cat.label}
+            </Button>
+          ))}
+        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -718,7 +741,9 @@ const ProductManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items.map((item) => (
+              {items
+                .filter((item) => categoryFilter === 'all' || item.category === categoryFilter)
+                .map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
