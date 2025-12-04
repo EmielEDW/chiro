@@ -410,64 +410,52 @@ export default function History() {
         
         <CardContent>
           {/* Mobile list (no horizontal scroll) */}
-          <div className="block sm:hidden space-y-3">
+          <div className="block sm:hidden space-y-1">
             {paginatedItems.map((item) => (
-              <div key={`${item.type}-${item.id}`} className="border rounded-lg p-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="font-medium truncate">
-                      {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
+              <div key={`${item.type}-${item.id}`} className="flex items-center justify-between py-2 px-1 border-b last:border-b-0">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium truncate">
+                      {item.type === 'consumption' ? item.item_name : 'Opwaardering'}
                     </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {formatDate(item.created_at)}
+                    <div className="text-xs text-muted-foreground">
+                      {format(new Date(item.created_at), "dd/MM HH:mm")}
                     </div>
                   </div>
-                  <div
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
                     className={cn(
-                      "shrink-0 font-semibold",
+                      "text-sm font-semibold",
                       item.price_cents > 0 ? "text-green-600" : "text-red-600"
                     )}
                   >
                     {item.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(item.price_cents))}
-                  </div>
-                </div>
-                <div className="mt-2">
+                  </span>
                   {item.isReversed ? (
-                    <Badge variant="secondary" className="text-xs">Terugbetaald</Badge>
+                    <Badge variant="secondary" className="text-[10px] px-1">Terug</Badge>
                   ) : item.type === 'consumption' ? (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-orange-600 hover:text-orange-700 px-0"
-                        >
-                          <Undo2 className="h-4 w-4 mr-1" />
-                          Foutje
+                        <Button variant="ghost" size="sm" className="h-6 px-1 text-orange-600">
+                          <Undo2 className="h-3 w-3" />
                         </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                          <AlertDialogTitle>Terugdraaien?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Weet je zeker dat je deze transactie wilt terugdraaien?
-                            <br />
-                            <strong>Details:</strong> {item.type === 'consumption' ? item.item_name : 'Saldo opwaardering'}
-                            <br />
-                            <strong>Bedrag:</strong> {formatCurrency(Math.abs(item.price_cents))}
-                            {item.type === 'consumption' && (
-                              <><br /><strong>Let op:</strong> De voorraad wordt ook teruggeteld.</>
-                            )}
+                            {item.item_name} - {formatCurrency(Math.abs(item.price_cents))}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                          <AlertDialogCancel>Nee</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => reverseTransaction.mutate(item)}
                             disabled={reverseTransaction.isPending}
                             className="bg-orange-600 hover:bg-orange-700"
                           >
-                            {reverseTransaction.isPending ? 'Bezig...' : 'Ja, terugdraaien'}
+                            Ja
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

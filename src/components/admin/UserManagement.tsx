@@ -11,13 +11,12 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { History, MoreHorizontal, Shield, UserX, Users, QrCode } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { MoreHorizontal, Shield, UserX, Users, QrCode } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import UserConsumptionHistory from './UserConsumptionHistory';
 import BalanceAdjustmentDialog from './BalanceAdjustmentDialog';
 import RoleManagement from './RoleManagement';
 import QRCode from 'qrcode';
@@ -38,7 +37,6 @@ interface Profile {
 type ViewMode = 'users' | 'guests';
 
 const UserManagement = () => {
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showFinalDeleteConfirm, setShowFinalDeleteConfirm] = useState<string | null>(null);
@@ -434,28 +432,7 @@ const UserManagement = () => {
                       </span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setSelectedUserId(user.id)}
-                              title="Geschiedenis"
-                            >
-                              <History className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle>Consumptie geschiedenis - {user.name}</DialogTitle>
-                            </DialogHeader>
-                            {selectedUserId && (
-                              <UserConsumptionHistory userId={selectedUserId} />
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        
+                        <div className="flex items-center gap-2">
                         <BalanceAdjustmentDialog
                           userId={user.id}
                           userName={user.name}
