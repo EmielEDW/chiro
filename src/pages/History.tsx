@@ -302,17 +302,18 @@ export default function History() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <h1 className="text-2xl font-semibold">Geschiedenis</h1>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
+      <div className="container mx-auto px-4 py-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="glass-button rounded-full">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-2xl font-semibold">Geschiedenis</h1>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Mijn Transactie Geschiedenis</CardTitle>
+        <div className="glass-card p-0 overflow-hidden">
+          <CardHeader>
+            <CardTitle>Mijn Transactie Geschiedenis</CardTitle>
           <div className="space-y-4">
             {/* Date filters */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
@@ -609,7 +610,8 @@ export default function History() {
             {startIndex + 1}-{Math.min(endIndex, filteredItems.length)} van {filteredItems.length} getoond
           </div>
         </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
