@@ -43,41 +43,40 @@ export const AdjustmentHistory = () => {
           Overzicht van alle manuele saldo aanpassingen door admins
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-2 sm:px-6">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Datum</TableHead>
+              <TableHead className="whitespace-nowrap">Datum</TableHead>
               <TableHead>Gebruiker</TableHead>
               <TableHead>Bedrag</TableHead>
-              <TableHead>Reden</TableHead>
+              <TableHead className="hidden sm:table-cell">Reden</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {adjustments?.map((adjustment) => (
               <TableRow key={adjustment.id}>
-                <TableCell>
-                  {format(new Date(adjustment.created_at), "dd MMM yyyy HH:mm", {
+                <TableCell className="text-xs sm:text-sm whitespace-nowrap">
+                  {format(new Date(adjustment.created_at), "dd/MM/yy", {
                     locale: nl,
                   })}
+                  <span className="hidden sm:inline">
+                    {" "}{format(new Date(adjustment.created_at), "HH:mm", { locale: nl })}
+                  </span>
                 </TableCell>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{adjustment.user?.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {adjustment.user?.email}
-                    </div>
-                  </div>
+                <TableCell className="text-xs sm:text-sm">
+                  {adjustment.user?.name}
                 </TableCell>
                 <TableCell>
                   <Badge
                     variant={adjustment.delta_cents > 0 ? "default" : "destructive"}
+                    className="text-xs"
                   >
                     {adjustment.delta_cents > 0 ? "+" : ""}
                     {formatCurrency(adjustment.delta_cents)}
                   </Badge>
                 </TableCell>
-                <TableCell className="max-w-md">
+                <TableCell className="hidden sm:table-cell max-w-md">
                   <span className="text-sm">{adjustment.reason}</span>
                 </TableCell>
               </TableRow>

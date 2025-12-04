@@ -502,16 +502,16 @@ const SalesDetailsDashboard = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
+      <CardContent className="px-2 sm:px-6">
+        <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Datum & Tijd</TableHead>
-                <TableHead>Gebruiker</TableHead>
-                <TableHead>Product/Details</TableHead>
-                <TableHead>Bedrag</TableHead>
-                <TableHead className="w-10"></TableHead>
+                <TableHead className="whitespace-nowrap text-xs sm:text-sm">Datum</TableHead>
+                <TableHead className="hidden sm:table-cell">Gebruiker</TableHead>
+                <TableHead className="text-xs sm:text-sm">Product</TableHead>
+                <TableHead className="text-xs sm:text-sm">Bedrag</TableHead>
+                <TableHead className="w-8 sm:w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -520,10 +520,13 @@ const SalesDetailsDashboard = () => {
                   key={`${sale.type}-${sale.id}`}
                   className={sale.is_refunded ? "opacity-60 bg-muted/20" : ""}
                 >
-                  <TableCell className="font-mono text-sm">
-                    {formatDate(sale.created_at)}
+                  <TableCell className="font-mono text-xs sm:text-sm whitespace-nowrap p-2 sm:p-4">
+                    <span className="sm:hidden">
+                      {new Date(sale.created_at).toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit' })}
+                    </span>
+                    <span className="hidden sm:inline">{formatDate(sale.created_at)}</span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <div className="flex items-center gap-2">
                       <Avatar className="h-6 w-6">
                         <AvatarFallback className="text-xs">
@@ -533,31 +536,34 @@ const SalesDetailsDashboard = () => {
                       {sale.user_name}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {sale.type === 'consumption' ? sale.item_name : 'Saldo opwaardering'}
+                  <TableCell className="p-2 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                      <span className="text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">
+                        {sale.type === 'consumption' ? sale.item_name : 'Opwaardering'}
+                      </span>
+                      <span className="text-xs text-muted-foreground sm:hidden">{sale.user_name}</span>
                       {sale.is_refunded && (
-                        <Undo2 className="h-4 w-4 text-muted-foreground" />
+                        <Undo2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
                       )}
                     </div>
                   </TableCell>
                   <TableCell className={cn(
-                    "font-medium",
+                    "font-medium text-xs sm:text-sm p-2 sm:p-4",
                     sale.is_refunded ? "line-through text-muted-foreground" : 
                     sale.price_cents > 0 ? "text-green-600" : "text-red-600"
                   )}>
                     {sale.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(sale.price_cents))}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="p-1 sm:p-4">
                     {sale.type === 'consumption' && !sale.is_refunded && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-orange-600 hover:text-orange-700"
+                            className="h-7 w-7 sm:h-8 sm:w-8 text-orange-600 hover:text-orange-700"
                           >
-                            <Undo2 className="h-4 w-4" />
+                            <Undo2 className="h-3 w-3 sm:h-4 sm:w-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
