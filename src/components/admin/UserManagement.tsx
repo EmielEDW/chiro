@@ -12,7 +12,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { History, MoreHorizontal, Shield, UserX } from 'lucide-react';
+import { History, MoreHorizontal, Shield, UserX, Users, QrCode } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +21,7 @@ import { useState } from 'react';
 import UserConsumptionHistory from './UserConsumptionHistory';
 import BalanceAdjustmentDialog from './BalanceAdjustmentDialog';
 import RoleManagement from './RoleManagement';
+import QRCode from 'qrcode';
 
 interface Profile {
   id: string;
@@ -32,13 +33,18 @@ interface Profile {
   guest_account: boolean;
   occupied_by_name?: string;
   guest_number?: number;
+  occupied?: boolean;
 }
+
+type ViewMode = 'users' | 'guests';
 
 const UserManagement = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showFinalDeleteConfirm, setShowFinalDeleteConfirm] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('users');
+  const [qrCodeData, setQrCodeData] = useState<{ name: string; url: string; balance: number } | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -72,6 +78,84 @@ const UserManagement = () => {
 
   const formatCurrency = (cents: number) => {
     return `€${(cents / 100).toFixed(2)}`;
+  };
+
+  const generateQRCode = async (guestId: string, guestName: string, balance: number) => {
+    try {
+      const guestUrl = `${window.location.origin}/guest/${guestId}`;
+      const qrCode = await QRCode.toDataURL(guestUrl);
+      setQrCodeData({ name: guestName, url: qrCode, balance });
+    } catch (error) {
+      toast({
+        title: "Fout",
+        description: "Kon QR-code niet genereren.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const closeGuestTab = async (guestId: string, guestName: string) => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', guestId);
+      
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-balances'] });
+      
+      toast({
+        title: "Account verwijderd",
+        description: `${guestName} is verwijderd. Transacties blijven bewaard voor statistieken.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Fout",
+        description: "Er ging iets mis bij het verwijderen van het account.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteGuestAccount = async (guestId: string) => {
+    try {
+      const { data: consumptions, error: consumptionsError } = await supabase
+        .from('consumptions')
+        .select('id')
+        .eq('user_id', guestId)
+        .limit(1);
+      
+      if (consumptionsError) throw consumptionsError;
+      
+      if (consumptions && consumptions.length > 0) {
+        throw new Error('Cannot delete guest account with existing consumptions');
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', guestId);
+      
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['user-balances'] });
+      
+      toast({
+        title: "Account verwijderd",
+        description: "Gastaccount is verwijderd.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Kan niet verwijderen",
+        description: error.message.includes('consumptions') 
+          ? "Kan account met bestaande consumptions niet verwijderen."
+          : "Er ging iets mis bij het verwijderen.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleDeleteUser = async (userId: string, userName: string, isGuest: boolean) => {
@@ -132,14 +216,187 @@ const UserManagement = () => {
     );
   }
 
+  // Filter users based on view mode
+  const regularUsers = users.filter(u => !u.guest_account);
+  const guestAccounts = users.filter(u => u.guest_account && u.active);
+  const occupiedGuests = guestAccounts.filter(g => g.occupied);
+  const availableGuests = guestAccounts.filter(g => !g.occupied);
+
+  // Render guest view
+  if (viewMode === 'guests') {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Actieve gasttabs ({occupiedGuests.length})
+                </CardTitle>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewMode('users')}
+              >
+                ← Terug naar gebruikers
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {occupiedGuests.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                Geen actieve gasttabs
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Gast</TableHead>
+                    <TableHead>Saldo</TableHead>
+                    <TableHead>Acties</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {occupiedGuests.map((guest) => (
+                    <TableRow key={guest.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{guest.occupied_by_name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            Gast #{guest.guest_number}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={(balances[guest.id] || 0) < 0 ? "destructive" : "default"}
+                        >
+                          {formatCurrency(balances[guest.id] || 0)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => generateQRCode(guest.id, guest.occupied_by_name || guest.name, balances[guest.id] || 0)}
+                          >
+                            <QrCode className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => closeGuestTab(guest.id, guest.occupied_by_name || guest.name)}
+                          >
+                            Account Afsluiten
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {availableGuests.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Beschikbare gastaccounts ({availableGuests.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Account</TableHead>
+                    <TableHead>Saldo</TableHead>
+                    <TableHead>Acties</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {availableGuests.map((guest) => (
+                    <TableRow key={guest.id}>
+                      <TableCell>Gast #{guest.guest_number}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">
+                          {formatCurrency(balances[guest.id] || 0)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteGuestAccount(guest.id)}
+                        >
+                          <UserX className="h-3 w-3" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* QR Code Dialog */}
+        <Dialog open={!!qrCodeData} onOpenChange={() => setQrCodeData(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>QR-code voor {qrCodeData?.name}</DialogTitle>
+            </DialogHeader>
+            <div className="text-center space-y-4">
+              {qrCodeData && (
+                <>
+                  <img 
+                    src={qrCodeData.url} 
+                    alt="QR Code" 
+                    className="mx-auto w-48 h-48"
+                  />
+                  <div className="space-y-2">
+                    <Badge 
+                      variant={qrCodeData.balance < 0 ? "destructive" : "default"}
+                      className="text-lg px-4 py-2"
+                    >
+                      {formatCurrency(qrCodeData.balance)}
+                    </Badge>
+                    <p className="text-sm text-muted-foreground">
+                      Laat de gast deze QR-code scannen
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // Render regular users view
   return (
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Gebruikers beheer</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Beheer alle geregistreerde gebruikers en hun saldo's
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gebruikers beheer</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Beheer alle geregistreerde gebruikers en hun saldo's
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode('guests')}
+            >
+              <Users className="h-4 w-4 mr-2" />
+              Gasttabs ({occupiedGuests.length})
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -153,7 +410,7 @@ const UserManagement = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {regularUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
@@ -164,27 +421,16 @@ const UserManagement = () => {
                       <div className="flex items-center gap-2">
                         <div>
                           <div className="font-medium flex items-center gap-2">
-                            {user.guest_account && user.occupied_by_name 
-                              ? `${user.occupied_by_name} (${user.name})`
-                              : user.name
-                            }
+                            {user.name}
                             {user.role === 'admin' && (
                               <span className="h-2.5 w-2.5 rounded-full bg-destructive" title="Admin" />
                             )}
                             {user.role === 'treasurer' && (
                               <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="Penningmeester" />
                             )}
-                            {user.guest_account && (
-                              <Badge variant="outline" className="ml-1 text-xs">
-                                Gast
-                              </Badge>
-                            )}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {user.guest_account 
-                              ? `Gast #${user.guest_number}`
-                              : `Lid sinds ${new Date(user.created_at).toLocaleDateString('nl-BE')}`
-                            }
+                            Lid sinds {new Date(user.created_at).toLocaleDateString('nl-BE')}
                           </div>
                         </div>
                       </div>
@@ -238,14 +484,12 @@ const UserManagement = () => {
                           </PopoverTrigger>
                           <PopoverContent className="w-48 p-2" align="end">
                             <div className="flex flex-col gap-1">
-                              {!user.guest_account && (
-                                <RoleManagement
-                                  userId={user.id}
-                                  userName={user.name}
-                                  currentRole={user.role}
-                                  asMenuItem
-                                />
-                              )}
+                              <RoleManagement
+                                userId={user.id}
+                                userName={user.name}
+                                currentRole={user.role}
+                                asMenuItem
+                              />
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -272,18 +516,10 @@ const UserManagement = () => {
       <AlertDialog open={!!showDeleteConfirm} onOpenChange={(open) => !open && setShowDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {users.find(u => u.id === showDeleteConfirm)?.guest_account 
-                ? 'Gastaccount verwijderen' 
-                : 'Gebruiker verwijderen'
-              }
-            </AlertDialogTitle>
+            <AlertDialogTitle>Gebruiker verwijderen</AlertDialogTitle>
             <AlertDialogDescription>
               Weet je zeker dat je <strong>{users.find(u => u.id === showDeleteConfirm)?.name}</strong> wilt verwijderen?
-              {users.find(u => u.id === showDeleteConfirm)?.guest_account 
-                ? ' Het gastaccount wordt verwijderd, maar alle transacties blijven bewaard voor statistieken.'
-                : ' Deze actie kan niet ongedaan worden gemaakt.'
-              }
+              Deze actie kan niet ongedaan worden gemaakt.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

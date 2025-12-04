@@ -23,8 +23,6 @@ import RestockSessions from '@/components/admin/RestockSessions';
 import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
-import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
-import GuestTabManagement from '@/components/admin/GuestTabManagement';
 import { AdminNotepad } from '@/components/admin/AdminNotepad';
 
 const AdminDashboard = () => {
@@ -103,7 +101,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 h-12 bg-background border-2 border-muted">
+          <TabsList className="grid w-full grid-cols-4 h-12 bg-background border-2 border-muted">
             <TabsTrigger 
               value="overview" 
               className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
@@ -117,13 +115,6 @@ const AdminDashboard = () => {
             >
               <Users className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Gebruikers</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="guests" 
-              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
-            >
-              <Users className="h-4 w-4 shrink-0" />
-              <span className="hidden sm:inline">Gasttabs</span>
             </TabsTrigger>
             <TabsTrigger 
               value="stock" 
@@ -148,10 +139,6 @@ const AdminDashboard = () => {
           <TabsContent value="users">
             <UserManagement />
           </TabsContent>
-
-          <TabsContent value="guests">
-            <GuestTabManagement />
-          </TabsContent>
           
           <TabsContent value="stock" className="space-y-6">
             <ProductManagement />
@@ -164,11 +151,6 @@ const AdminDashboard = () => {
             <SalesDetailsDashboard />
           </TabsContent>
         </Tabs>
-
-        {/* QR Code at bottom */}
-        <div className="flex justify-center pt-8">
-          <WebsiteQRGenerator />
-        </div>
       </div>
     </div>
   );
