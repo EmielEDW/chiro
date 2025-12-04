@@ -509,11 +509,9 @@ const SalesDetailsDashboard = () => {
               <TableRow>
                 <TableHead>Datum & Tijd</TableHead>
                 <TableHead>Gebruiker</TableHead>
-                <TableHead>Type</TableHead>
                 <TableHead>Product/Details</TableHead>
                 <TableHead>Bedrag</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actie</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -536,9 +534,6 @@ const SalesDetailsDashboard = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    {getTypeBadge(sale.type, sale.topup_status)}
-                  </TableCell>
-                  <TableCell>
                     <div className="flex items-center gap-2">
                       {sale.type === 'consumption' ? sale.item_name : 'Saldo opwaardering'}
                       {sale.is_refunded && (
@@ -554,28 +549,15 @@ const SalesDetailsDashboard = () => {
                     {sale.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(sale.price_cents))}
                   </TableCell>
                   <TableCell>
-                    {sale.is_refunded ? (
-                      <Badge variant="secondary" className="text-xs">
-                        <Undo2 className="h-3 w-3 mr-1" />
-                        Gerefund
-                      </Badge>
-                    ) : (
-                      <Badge variant="default" className="text-xs">
-                        {sale.type === 'consumption' ? 'Betaald' : 'Voltooid'}
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
                     {sale.type === 'consumption' && !sale.is_refunded && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="text-orange-600 hover:text-orange-700 h-auto px-2 py-1"
+                            size="icon"
+                            className="h-8 w-8 text-orange-600 hover:text-orange-700"
                           >
-                            <Undo2 className="h-3 w-3 mr-1" />
-                            Terugdraaien
+                            <Undo2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
