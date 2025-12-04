@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQueryClient } from '@tanstack/react-query';
-import ProfileImageUpload from '@/components/ProfileImageUpload';
+
 
 const Settings = () => {
   const { user } = useAuth();
@@ -183,9 +183,6 @@ const Settings = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <ProfileImageUpload />
-              
-              <Separator />
               
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

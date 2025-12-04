@@ -6,7 +6,6 @@ import DrinkGrid from '@/components/DrinkGrid';
 import TopUpDialog from '@/components/TopUpDialog';
 import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, Settings, CreditCard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -68,23 +67,9 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  {profile?.avatar_url && (
-                    <img 
-                      src={profile.avatar_url} 
-                      alt="Profile" 
-                      className="h-full w-full object-cover rounded-full"
-                    />
-                  )}
-                  <AvatarFallback>
-                    {profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium">{profile?.name || 'Gebruiker'}</p>
-                  <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
-                </div>
+              <div className="hidden sm:block">
+                <p className="text-sm font-medium">{profile?.name || 'Gebruiker'}</p>
+                <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
               </div>
               
               {profile?.role === 'admin' && (

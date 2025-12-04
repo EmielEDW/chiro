@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -603,14 +603,7 @@ const SalesDetailsDashboard = () => {
                         <span className="hidden sm:inline">{formatDate(sale.created_at)}</span>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">
-                              {sale.user_name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          {sale.user_name}
-                        </div>
+                        {sale.user_name}
                       </TableCell>
                       <TableCell className="p-2 sm:p-4">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
