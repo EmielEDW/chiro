@@ -28,7 +28,7 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
           {formatCurrency(balance)}
         </div>
         
-        <Button onClick={onTopUp} className="px-6 shadow-lg" size="sm">
+        <Button onClick={onTopUp} className="w-full shadow-lg" size="sm">
           <Plus className="mr-2 h-4 w-4" />
           Opladen
         </Button>
