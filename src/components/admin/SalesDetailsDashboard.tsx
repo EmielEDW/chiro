@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Search, Filter, CalendarIcon, ChevronLeft, ChevronRight, Undo2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { nl } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -44,24 +45,15 @@ const SalesDetailsDashboard = () => {
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Memoize default dates to prevent infinite re-renders
-  const defaultDates = useMemo(() => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    return {
-      startDate: thirtyDaysAgo,
-      endDate: new Date()
-    };
-  }, []);
-  
-  const startDate = dateFrom || defaultDates.startDate;
-  const endDate = dateTo || defaultDates.endDate;
+  // Use selected dates or fetch all data (no default limit)
+  const startDate = dateFrom;
+  const endDate = dateTo;
 
   const { data: salesDetails = [], isLoading } = useQuery({
-    queryKey: ['sales-details', startDate.toISOString(), endDate.toISOString()],
+    queryKey: ['sales-details', startDate?.toISOString(), endDate?.toISOString()],
     queryFn: async () => {
-      // Fetch consumptions
-      const { data: consumptionsData, error: consumptionsError } = await supabase
+      // Build consumptions query
+      let consumptionsQuery = supabase
         .from('consumptions')
         .select(`
           id,
@@ -77,9 +69,12 @@ const SalesDetailsDashboard = () => {
             name
           )
         `)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false });
+      
+      if (startDate) consumptionsQuery = consumptionsQuery.gte('created_at', startDate.toISOString());
+      if (endDate) consumptionsQuery = consumptionsQuery.lte('created_at', endDate.toISOString());
+      
+      const { data: consumptionsData, error: consumptionsError } = await consumptionsQuery;
       
       if (consumptionsError) throw consumptionsError;
 
@@ -96,8 +91,8 @@ const SalesDetailsDashboard = () => {
       // Don't filter out refunded transactions, but mark them
       const validConsumptionsData = consumptionsData;
 
-      // Fetch top-ups (only paid ones for admin view)
-      const { data: topUpsData, error: topUpsError } = await supabase
+      // Build top-ups query (only paid ones for admin view)
+      let topUpsQuery = supabase
         .from('top_ups')
         .select(`
           id,
@@ -110,10 +105,13 @@ const SalesDetailsDashboard = () => {
             name
           )
         `)
-        .eq('status', 'paid') // Only show paid top-ups
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
+        .eq('status', 'paid')
         .order('created_at', { ascending: false });
+      
+      if (startDate) topUpsQuery = topUpsQuery.gte('created_at', startDate.toISOString());
+      if (endDate) topUpsQuery = topUpsQuery.lte('created_at', endDate.toISOString());
+      
+      const { data: topUpsData, error: topUpsError } = await topUpsQuery;
       
       if (topUpsError) throw topUpsError;
 
@@ -328,11 +326,36 @@ const SalesDetailsDashboard = () => {
     },
   });
 
-  if (isLoading) {
+  // Fetch adjustments for the "adjustment" filter
+  const { data: adjustments = [], isLoading: isLoadingAdjustments } = useQuery({
+    queryKey: ['adjustments-sales', startDate?.toISOString(), endDate?.toISOString()],
+    queryFn: async () => {
+      let query = supabase
+        .from('adjustments')
+        .select(`
+          *,
+          user:profiles!adjustments_user_id_fkey(id, name)
+        `)
+        .not('reason', 'ilike', 'Foutje teruggedraaid:%')
+        .order('created_at', { ascending: false });
+      
+      if (startDate) query = query.gte('created_at', startDate.toISOString());
+      if (endDate) query = query.lte('created_at', endDate.toISOString());
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+    enabled: filterType === 'transaction' && filterValue === 'adjustment',
+  });
+
+  const showAdjustments = filterType === 'transaction' && filterValue === 'adjustment';
+
+  if (isLoading || (showAdjustments && isLoadingAdjustments)) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Verkoop details (laatste 30 dagen)</CardTitle>
+          <CardTitle>Verkoop & Opwaardering Details</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8">Laden...</div>
@@ -492,6 +515,7 @@ const SalesDetailsDashboard = () => {
                         <>
                           <SelectItem value="consumption">Aankopen</SelectItem>
                           <SelectItem value="topup">Opwaarderingen</SelectItem>
+                          <SelectItem value="adjustment">Saldo aanpassingen</SelectItem>
                         </>
                       )}
                     </SelectContent>
@@ -503,142 +527,196 @@ const SalesDetailsDashboard = () => {
         </div>
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="whitespace-nowrap text-xs sm:text-sm">Datum</TableHead>
-                <TableHead className="hidden sm:table-cell">Gebruiker</TableHead>
-                <TableHead className="text-xs sm:text-sm">Product</TableHead>
-                <TableHead className="text-xs sm:text-sm">Bedrag</TableHead>
-                <TableHead className="w-8 sm:w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedSales.map((sale) => (
-                <TableRow 
-                  key={`${sale.type}-${sale.id}`}
-                  className={sale.is_refunded ? "opacity-60 bg-muted/20" : ""}
-                >
-                  <TableCell className="font-mono text-xs sm:text-sm whitespace-nowrap p-2 sm:p-4">
-                    <span className="sm:hidden">
-                      {new Date(sale.created_at).toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit' })}
-                    </span>
-                    <span className="hidden sm:inline">{formatDate(sale.created_at)}</span>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarFallback className="text-xs">
-                          {sale.user_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      {sale.user_name}
-                    </div>
-                  </TableCell>
-                  <TableCell className="p-2 sm:p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
-                      <span className="text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">
-                        {sale.type === 'consumption' ? sale.item_name : 'Opwaardering'}
-                      </span>
-                      <span className="text-xs text-muted-foreground sm:hidden">{sale.user_name}</span>
-                      {sale.is_refunded && (
-                        <Undo2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className={cn(
-                    "font-medium text-xs sm:text-sm p-2 sm:p-4",
-                    sale.is_refunded ? "line-through text-muted-foreground" : 
-                    sale.price_cents > 0 ? "text-green-600" : "text-red-600"
-                  )}>
-                    {sale.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(sale.price_cents))}
-                  </TableCell>
-                  <TableCell className="p-1 sm:p-4">
-                    {sale.type === 'consumption' && !sale.is_refunded && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 sm:h-8 sm:w-8 text-orange-600 hover:text-orange-700"
-                          >
-                            <Undo2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Weet je zeker dat je deze transactie wilt terugdraaien?
-                              <br />
-                              <strong>Product:</strong> {sale.item_name}
-                              <br />
-                              <strong>Gebruiker:</strong> {sale.user_name}
-                              <br />
-                              <strong>Bedrag:</strong> €{(Math.abs(sale.price_cents) / 100).toFixed(2)}
-                              <br />
-                              <strong>Let op:</strong> De gebruiker krijgt het geld terug en de voorraad wordt bijgewerkt.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Annuleren</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => reverseTransaction.mutate(sale)}
-                              disabled={reverseTransaction.isPending}
-                              className="bg-orange-600 hover:bg-orange-700"
-                            >
-                              {reverseTransaction.isPending ? 'Bezig...' : 'Terugdraaien'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </TableCell>
+        {showAdjustments ? (
+          // Adjustments table
+          <div className="rounded-md border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="whitespace-nowrap text-xs sm:text-sm">Datum</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Gebruiker</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Bedrag</TableHead>
+                  <TableHead className="hidden sm:table-cell">Reden</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          
-          {filteredSales.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              Geen transacties gevonden voor de geselecteerde criteria.
-            </div>
-          )}
-        </div>
-        
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-muted-foreground">
-              Pagina {currentPage} van {totalPages} ({filteredSales.length} totaal)
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Vorige
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Volgende
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+              </TableHeader>
+              <TableBody>
+                {adjustments.map((adjustment) => (
+                  <TableRow key={adjustment.id}>
+                    <TableCell className="text-xs sm:text-sm whitespace-nowrap p-2 sm:p-4">
+                      <span className="sm:hidden">
+                        {format(new Date(adjustment.created_at), "dd/MM/yy", { locale: nl })}
+                      </span>
+                      <span className="hidden sm:inline">
+                        {format(new Date(adjustment.created_at), "dd/MM/yy HH:mm", { locale: nl })}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-xs sm:text-sm p-2 sm:p-4">
+                      {adjustment.user?.name}
+                    </TableCell>
+                    <TableCell className="p-2 sm:p-4">
+                      <Badge
+                        variant={adjustment.delta_cents > 0 ? "default" : "destructive"}
+                        className="text-xs"
+                      >
+                        {adjustment.delta_cents > 0 ? "+" : ""}
+                        {formatCurrency(adjustment.delta_cents)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell max-w-md p-2 sm:p-4">
+                      <span className="text-sm">{adjustment.reason}</span>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            
+            {adjustments.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                Geen saldo aanpassingen gevonden.
+              </div>
+            )}
           </div>
-        )}
+        ) : (
+          // Sales table
+          <>
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="whitespace-nowrap text-xs sm:text-sm">Datum</TableHead>
+                    <TableHead className="hidden sm:table-cell">Gebruiker</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Product</TableHead>
+                    <TableHead className="text-xs sm:text-sm">Bedrag</TableHead>
+                    <TableHead className="w-8 sm:w-10"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedSales.map((sale) => (
+                    <TableRow 
+                      key={`${sale.type}-${sale.id}`}
+                      className={sale.is_refunded ? "opacity-60 bg-muted/20" : ""}
+                    >
+                      <TableCell className="font-mono text-xs sm:text-sm whitespace-nowrap p-2 sm:p-4">
+                        <span className="sm:hidden">
+                          {new Date(sale.created_at).toLocaleDateString('nl-BE', { day: '2-digit', month: '2-digit' })}
+                        </span>
+                        <span className="hidden sm:inline">{formatDate(sale.created_at)}</span>
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs">
+                              {sale.user_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          {sale.user_name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2 sm:p-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-0.5 sm:gap-2">
+                          <span className="text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none">
+                            {sale.type === 'consumption' ? sale.item_name : 'Opwaardering'}
+                          </span>
+                          <span className="text-xs text-muted-foreground sm:hidden">{sale.user_name}</span>
+                          {sale.is_refunded && (
+                            <Undo2 className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className={cn(
+                        "font-medium text-xs sm:text-sm p-2 sm:p-4",
+                        sale.is_refunded ? "line-through text-muted-foreground" : 
+                        sale.price_cents > 0 ? "text-green-600" : "text-red-600"
+                      )}>
+                        {sale.price_cents > 0 ? '+' : ''}{formatCurrency(Math.abs(sale.price_cents))}
+                      </TableCell>
+                      <TableCell className="p-1 sm:p-4">
+                        {sale.type === 'consumption' && !sale.is_refunded && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 sm:h-8 sm:w-8 text-orange-600 hover:text-orange-700"
+                              >
+                                <Undo2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Transactie terugdraaien?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Weet je zeker dat je deze transactie wilt terugdraaien?
+                                  <br />
+                                  <strong>Product:</strong> {sale.item_name}
+                                  <br />
+                                  <strong>Gebruiker:</strong> {sale.user_name}
+                                  <br />
+                                  <strong>Bedrag:</strong> €{(Math.abs(sale.price_cents) / 100).toFixed(2)}
+                                  <br />
+                                  <strong>Let op:</strong> De gebruiker krijgt het geld terug en de voorraad wordt bijgewerkt.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => reverseTransaction.mutate(sale)}
+                                  disabled={reverseTransaction.isPending}
+                                  className="bg-orange-600 hover:bg-orange-700"
+                                >
+                                  {reverseTransaction.isPending ? 'Bezig...' : 'Terugdraaien'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {filteredSales.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Geen transacties gevonden voor de geselecteerde criteria.
+                </div>
+              )}
+            </div>
+            
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Pagina {currentPage} van {totalPages} ({filteredSales.length} totaal)
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Vorige
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Volgende
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
 
-        <div className="mt-2 text-sm text-muted-foreground">
-          {startIndex + 1}-{Math.min(endIndex, filteredSales.length)} van {filteredSales.length} getoond
-        </div>
+            <div className="mt-2 text-sm text-muted-foreground">
+              {startIndex + 1}-{Math.min(endIndex, filteredSales.length)} van {filteredSales.length} getoond
+            </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );
