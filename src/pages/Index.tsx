@@ -37,7 +37,7 @@ const Index = () => {
 
   if (isLoading || !profile) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 to-accent/5">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5">
         <div className="text-center space-y-4">
           <img 
             src="/lovable-uploads/11df38ab-3cdc-4bfc-8e71-a51ec8bef666.png" 
@@ -52,9 +52,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Header */}
-      <header className="bg-card border-b" id="main-header">
+      <header className="glass sticky top-0 z-40 border-b" id="main-header">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -77,6 +77,7 @@ const Index = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate('/admin')}
+                  className="glass-button rounded-full"
                 >
                   <Settings className="h-4 w-4" />
                 </Button>
@@ -86,6 +87,7 @@ const Index = () => {
                 variant="ghost"
                 size="sm"
                 onClick={handleSignOut}
+                className="glass-button rounded-full"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -98,7 +100,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Balance Card */}
         <TopUpDialog>
-          <div className="w-full">
+          <div className="w-full max-w-sm mx-auto">
             <BalanceCard 
               balance={balance} 
               onTopUp={() => {}}
@@ -111,7 +113,7 @@ const Index = () => {
           <Button 
             variant="outline" 
             size="lg"
-            className="w-full"
+            className="w-full glass-button rounded-xl"
             onClick={() => navigate('/history')}
           >
             <History className="h-5 w-5" />
@@ -134,12 +136,12 @@ const Index = () => {
       
       {/* Mobile Bottom Navigation */}
       {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50">
+        <div className="fixed bottom-0 left-0 right-0 glass-nav border-t z-50">
           <div className="grid grid-cols-2 gap-1 p-2">
             <Button
               variant="ghost"
               size="sm"
-              className="flex-col h-16 space-y-1"
+              className="flex-col h-14 space-y-1 rounded-xl"
               onClick={() => navigate('/history')}
             >
               <History className="h-5 w-5" />
@@ -150,7 +152,7 @@ const Index = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-col h-16 space-y-1"
+                className="flex-col h-14 space-y-1 rounded-xl"
               >
                 <CreditCard className="h-5 w-5" />
                 <span className="text-xs">Opladen</span>

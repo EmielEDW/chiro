@@ -1,6 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Wallet, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface BalanceCardProps {
   balance: number;
@@ -13,29 +12,21 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
   };
 
   const getBalanceColor = () => {
-    if (balance > 500) return 'text-primary';
+    if (balance > 500) return 'text-foreground';
     return 'text-yellow-600';
   };
 
   return (
-    <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Jouw Saldo</CardTitle>
-        <Wallet className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          <div className={`text-3xl font-bold ${getBalanceColor()}`}>
-            {formatCurrency(balance)}
-          </div>
-          
-          <Button onClick={onTopUp} className="w-full" size="sm">
-            <Plus className="mr-2 h-4 w-4" />
-            Opladen
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="glass-card p-6 text-center">
+      <p className="text-sm text-muted-foreground mb-1">Jouw Saldo</p>
+      <div className={`text-5xl font-bold tracking-tight ${getBalanceColor()} mb-4`}>
+        {formatCurrency(balance)}
+      </div>
+      <Button onClick={onTopUp} className="rounded-full px-6" size="sm">
+        <Plus className="mr-2 h-4 w-4" />
+        Opladen
+      </Button>
+    </div>
   );
 };
 
