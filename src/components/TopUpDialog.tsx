@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Building2, Plus, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { CreditCard, Building2, Plus, Loader2, Copy, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfile } from '@/hooks/useProfile';
 
@@ -20,8 +21,23 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const [method, setMethod] = useState<string>('');
   const [isOpen, setIsOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const { toast } = useToast();
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { toast: toastHook } = useToast();
   const { refreshBalance, profile } = useProfile();
+
+  const bankAccount = 'BE52 0637 7145 7809';
+  const paymentReference = `Opladen dranksaldo ${profile?.name || 'onbekend'}`;
+
+  const copyToClipboard = async (text: string, field: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(field);
+      toast.success('Gekopieerd naar klembord');
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (err) {
+      toast.error('Kopiëren mislukt');
+    }
+  };
 
   const quickAmounts = [25, 50];
   
@@ -41,7 +57,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
   const handleTopUp = async () => {
     const currentAmount = getCurrentAmount();
     if (!currentAmount || !method) {
-      toast({
+      toastHook({
         title: "Vul alle velden in",
         description: "Selecteer een bedrag en betaalmethode.",
         variant: "destructive",
@@ -51,7 +67,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
 
     const numAmount = parseFloat(currentAmount);
     if (numAmount <= 0) {
-      toast({
+      toastHook({
         title: "Ongeldig bedrag",
         description: "Voer een geldig bedrag in dat groter is dan €0.",
         variant: "destructive",
@@ -60,7 +76,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
     }
 
     if (numAmount < 25 && method === 'bancontact') {
-      toast({
+      toastHook({
         title: "Bedrag te laag voor Bancontact",
         description: "Voor bedragen onder €25 kan alleen bankoverschrijving gebruikt worden.",
         variant: "destructive",
@@ -69,7 +85,7 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
     }
 
     if (method === 'banktransfer') {
-      toast({
+      toastHook({
         title: "Bankoverschrijving",
         description: "Maak een overschrijving naar het opgegeven rekeningnummer. Je saldo wordt handmatig bijgewerkt door de admin.",
         duration: 8000,
@@ -99,13 +115,13 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
         setCustomAmount('');
         setMethod('');
         
-        toast({
+        toastHook({
           title: "Betaling gestart",
           description: "Je wordt doorgestuurd naar Stripe om de betaling te voltooien.",
         });
       } catch (error) {
         console.error('Payment error:', error);
-        toast({
+        toastHook({
           title: "Betalingsfout",
           description: "Er is iets misgegaan. Probeer het opnieuw.",
           variant: "destructive",
@@ -231,9 +247,46 @@ const TopUpDialog = ({ children }: TopUpDialogProps) => {
                   <span className="text-lg font-bold text-primary">€{getCurrentAmount()}</span>
                 </div>
                 {method === 'banktransfer' && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    <p><strong>Rekeningnummer:</strong> BE52 0637 7145 7809</p>
-                    <p><strong>Mededeling:</strong> Opladen dranksaldo {profile?.name || 'onbekend'}</p>
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2 p-2 bg-background rounded border">
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">Rekeningnummer:</span>
+                        <p className="font-mono font-medium">{bankAccount}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => copyToClipboard(bankAccount, 'account')}
+                      >
+                        {copiedField === 'account' ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 p-2 bg-background rounded border">
+                      <div className="text-xs">
+                        <span className="text-muted-foreground">Mededeling:</span>
+                        <p className="font-medium">{paymentReference}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => copyToClipboard(paymentReference, 'reference')}
+                      >
+                        {copiedField === 'reference' ? (
+                          <Check className="h-4 w-4 text-green-600" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 p-2 rounded border border-amber-200 dark:border-amber-900">
+                      ⚠️ Je saldo wordt handmatig aangepast nadat de admin de betaling heeft nagekeken.
+                    </p>
                   </div>
                 )}
               </CardContent>
