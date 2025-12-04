@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Wallet, Plus } from 'lucide-react';
 
 interface BalanceCardProps {
@@ -18,13 +17,6 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
     return 'text-yellow-600';
   };
 
-  const getBalanceBadge = () => {
-    if (balance > 500) return { variant: 'default' as const, text: 'Goed saldo' };
-    return { variant: 'secondary' as const, text: 'Laag saldo' };
-  };
-
-  const badge = getBalanceBadge();
-
   return (
     <Card className="bg-gradient-to-br from-primary/5 to-accent/5">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -33,11 +25,8 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className={`text-3xl font-bold ${getBalanceColor()}`}>
-              {formatCurrency(balance)}
-            </div>
-            <Badge variant={badge.variant}>{badge.text}</Badge>
+          <div className={`text-3xl font-bold ${getBalanceColor()}`}>
+            {formatCurrency(balance)}
           </div>
           
           <Button onClick={onTopUp} className="w-full" size="sm">
