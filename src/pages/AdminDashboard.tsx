@@ -25,7 +25,6 @@ import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { WebsiteQRGenerator } from '@/components/admin/WebsiteQRGenerator';
 import GuestTabManagement from '@/components/admin/GuestTabManagement';
-import { AdjustmentHistory } from '@/components/admin/AdjustmentHistory';
 import { AdminNotepad } from '@/components/admin/AdminNotepad';
 
 const AdminDashboard = () => {
@@ -161,9 +160,8 @@ const AdminDashboard = () => {
             <AdminNotepad />
           </TabsContent>
           
-          <TabsContent value="analytics" className="space-y-6">
+          <TabsContent value="analytics">
             <SalesDetailsDashboard />
-            <AdjustmentHistory />
           </TabsContent>
         </Tabs>
 
