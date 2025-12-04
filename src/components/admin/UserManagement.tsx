@@ -405,7 +405,6 @@ const UserManagement = () => {
                 <TableRow>
                   <TableHead>Gebruiker</TableHead>
                   <TableHead>Saldo</TableHead>
-                  <TableHead>Status</TableHead>
                   <TableHead>Acties</TableHead>
                 </TableRow>
               </TableHeader>
@@ -441,11 +440,6 @@ const UserManagement = () => {
                       }`}>
                         {formatCurrency(balances[user.id] || 0)}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.active ? "default" : "secondary"}>
-                        {user.active ? "Actief" : "Inactief"}
-                      </Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
