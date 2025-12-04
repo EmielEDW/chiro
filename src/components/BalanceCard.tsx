@@ -11,7 +11,7 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
     return `€${(cents / 100).toFixed(2)}`;
   };
 
-  
+  const isLowBalance = balance <= 500;
 
   return (
     <div className="glass-card p-6 text-center relative overflow-hidden">
@@ -24,7 +24,7 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
           <p className="text-sm font-medium text-muted-foreground">Jouw Saldo</p>
         </div>
         
-        <div className="text-5xl font-bold tracking-tight mb-4" style={{ color: 'hsl(351, 86%, 25%)' }}>
+        <div className={`text-5xl font-bold tracking-tight mb-4 ${isLowBalance ? 'text-primary' : 'text-foreground'}`}>
           {formatCurrency(balance)}
         </div>
         
