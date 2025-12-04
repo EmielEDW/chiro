@@ -24,7 +24,7 @@ const BalanceCard = ({ balance, onTopUp }: BalanceCardProps) => {
           <p className="text-sm font-medium text-muted-foreground">Jouw Saldo</p>
         </div>
         
-        <div className="text-5xl font-bold tracking-tight mb-4 text-primary">
+        <div className="text-5xl font-bold tracking-tight mb-4" style={{ color: 'hsl(351, 86%, 25%)' }}>
           {formatCurrency(balance)}
         </div>
         
