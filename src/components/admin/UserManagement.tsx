@@ -11,7 +11,6 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { History, MoreHorizontal, Shield, UserX, Users, QrCode } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -411,26 +410,19 @@ const UserManagement = () => {
               <TableBody>
                 {regularUsers.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {user.name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex items-center gap-2">
-                        <div>
-                          <div className="font-medium flex items-center gap-2">
-                            {user.name}
-                            {user.role === 'admin' && (
-                              <span className="h-2.5 w-2.5 rounded-full bg-destructive" title="Admin" />
-                            )}
-                            {user.role === 'treasurer' && (
-                              <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="Penningmeester" />
-                            )}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Lid sinds {new Date(user.created_at).toLocaleDateString('nl-BE')}
-                          </div>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium flex items-center gap-2">
+                          {user.name}
+                          {user.role === 'admin' && (
+                            <span className="h-2.5 w-2.5 rounded-full bg-destructive" title="Admin" />
+                          )}
+                          {user.role === 'treasurer' && (
+                            <span className="h-2.5 w-2.5 rounded-full bg-amber-500" title="Penningmeester" />
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Lid sinds {new Date(user.created_at).toLocaleDateString('nl-BE')}
                         </div>
                       </div>
                     </TableCell>
