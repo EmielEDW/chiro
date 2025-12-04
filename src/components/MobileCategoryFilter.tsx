@@ -91,8 +91,8 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
     <div 
       id="category-filter-bar"
       className={`
-        transition-all duration-300 ease-in-out bg-card border-b border-border
-        ${isSticky ? 'fixed top-0 left-0 right-0 z-50 shadow-md' : 'relative'}
+        transition-all duration-300 ease-in-out glass-nav border-b
+        ${isSticky ? 'fixed top-0 left-0 right-0 z-50' : 'relative'}
       `}
       style={isSticky ? { marginTop: 0, paddingTop: 0 } : {}}
     >

@@ -160,7 +160,9 @@ All colors MUST be HSL.
   }
 
   .glass-nav {
-    @apply bg-white/80 dark:bg-black/60 backdrop-blur-2xl border-white/20 dark:border-white/10;
-    box-shadow: 0 -1px 20px rgba(0, 0, 0, 0.05);
+    @apply bg-white/60 dark:bg-black/50 backdrop-blur-2xl border-white/30 dark:border-white/15;
+    box-shadow: 
+      0 -1px 30px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 }
