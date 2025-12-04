@@ -196,6 +196,13 @@ const SalesDetailsDashboard = () => {
     return matchesSearch && matchesFilter;
   });
 
+  // Calculate totals when filtering by user
+  const userFilterTotals = filterType === 'user' && filterValue ? {
+    totalConsumptions: filteredSales.filter(s => s.type === 'consumption' && !s.is_refunded).reduce((sum, s) => sum + Math.abs(s.price_cents), 0),
+    totalTopups: filteredSales.filter(s => s.type === 'topup').reduce((sum, s) => sum + s.price_cents, 0),
+    count: filteredSales.filter(s => s.type === 'consumption' && !s.is_refunded).length,
+  } : null;
+
   // Pagination
   const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -527,6 +534,20 @@ const SalesDetailsDashboard = () => {
         </div>
       </CardHeader>
       <CardContent className="px-2 sm:px-6">
+        {/* User filter summary */}
+        {userFilterTotals && (
+          <div className="mb-4 p-3 bg-muted/50 rounded-lg flex flex-wrap gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Totaal uitgegeven:</span>{' '}
+              <span className="font-semibold text-destructive">{formatCurrency(userFilterTotals.totalConsumptions)}</span>
+              <span className="text-muted-foreground ml-1">({userFilterTotals.count} items)</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Totaal opgewaardeerd:</span>{' '}
+              <span className="font-semibold text-green-600">{formatCurrency(userFilterTotals.totalTopups)}</span>
+            </div>
+          </div>
+        )}
         {showAdjustments ? (
           // Adjustments table
           <div className="rounded-md border overflow-hidden">
