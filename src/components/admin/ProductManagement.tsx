@@ -35,15 +35,17 @@ interface MixedDrinkComponent {
   component_name?: string;
 }
 
-const CATEGORY_ORDER = [
-  { value: 'all', label: 'Alles' },
-  { value: 'frisdranken', label: 'Frisdranken' },
-  { value: 'bieren', label: 'Bieren' },
-  { value: 'sterke_dranken', label: 'Sterke dranken' },
-  { value: 'mixed_drinks', label: 'Mixed Drinks' },
-  { value: 'chips', label: 'Chips' },
-  { value: 'andere', label: 'Andere' },
-];
+const getCategoryOrder = (category?: string) => {
+  switch (category) {
+    case 'frisdranken': return 1;
+    case 'bieren': return 2;
+    case 'sterke_dranken': return 3;
+    case 'mixed_drinks': return 4;
+    case 'chips': return 5;
+    case 'andere': return 6;
+    default: return 7;
+  }
+};
 
 const ProductManagement = () => {
   const { toast } = useToast();
@@ -52,7 +54,6 @@ const ProductManagement = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<MixedDrinkComponent[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState('all');
   
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [formData, setFormData] = useState({
@@ -718,18 +719,6 @@ const ProductManagement = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {CATEGORY_ORDER.map((cat) => (
-            <Button
-              key={cat.value}
-              variant={categoryFilter === cat.value ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setCategoryFilter(cat.value)}
-            >
-              {cat.label}
-            </Button>
-          ))}
-        </div>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
@@ -741,8 +730,8 @@ const ProductManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {items
-                .filter((item) => categoryFilter === 'all' || item.category === categoryFilter)
+              {[...items]
+                .sort((a, b) => getCategoryOrder(a.category) - getCategoryOrder(b.category))
                 .map((item) => (
                 <TableRow key={item.id}>
                   <TableCell>
