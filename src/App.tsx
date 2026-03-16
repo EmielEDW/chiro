@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Guest from "./pages/Guest";
 
 import History from "./pages/History";
+import Leaderboard from "./pages/Leaderboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -51,6 +52,11 @@ const App = () => (
             <Route path="/history" element={
               <ProtectedRoute>
                 <History />
+              </ProtectedRoute>
+            } />
+            <Route path="/leaderboard" element={
+              <ProtectedRoute>
+                <Leaderboard />
               </ProtectedRoute>
             } />
             <Route path="/" element={

@@ -3,11 +3,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { signOut } from '@/lib/auth';
 import BalanceCard from '@/components/BalanceCard';
 import DrinkGrid from '@/components/DrinkGrid';
-import TopUpDialog from '@/components/TopUpDialog';
+import TopUpDialog from "@/components/TopUpDialog";
 import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, History, Settings, CreditCard } from 'lucide-react';
+import { LogOut, History, Settings, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
@@ -110,15 +110,26 @@ const Index = () => {
 
         {/* Quick Actions - Only show on desktop */}
         {!isMobile && (
-          <Button 
-            variant="outline" 
-            size="lg"
-            className="w-full glass-button rounded-xl"
-            onClick={() => navigate('/history')}
-          >
-            <History className="h-5 w-5" />
-            <span>Geschiedenis</span>
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1 glass-button rounded-xl"
+              onClick={() => navigate('/history')}
+            >
+              <History className="h-5 w-5" />
+              <span>Geschiedenis</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex-1 glass-button rounded-xl"
+              onClick={() => navigate('/leaderboard')}
+            >
+              <Trophy className="h-5 w-5" />
+              <span>Leaderboard</span>
+            </Button>
+          </div>
         )}
 
         {/* Mobile Category Filter */}
@@ -148,16 +159,15 @@ const Index = () => {
               <span className="text-xs">Geschiedenis</span>
             </Button>
             
-            <TopUpDialog>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-col h-14 space-y-1 rounded-xl"
-              >
-                <CreditCard className="h-5 w-5" />
-                <span className="text-xs">Opladen</span>
-              </Button>
-            </TopUpDialog>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-col h-14 space-y-1 rounded-xl"
+              onClick={() => navigate('/leaderboard')}
+            >
+              <Trophy className="h-5 w-5" />
+              <span className="text-xs">Leaderboard</span>
+            </Button>
           </div>
         </div>
       )}
