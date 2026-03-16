@@ -31,6 +31,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loggingItemId, setLoggingItemId] = useState<string | null>(null);
+  const [isLogging, setIsLogging] = useState(false);
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
@@ -177,21 +178,23 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
   };
 
   const logDrink = async (item: Item) => {
-    if (loggingItemId) return; // prevent double-clicks
+    if (isLogging) return; // prevent any click while a log is in progress
+    setIsLogging(true);
     setLoggingItemId(item.id);
 
     const stockValue = item.calculated_stock !== undefined ? item.calculated_stock : item.stock_quantity;
     
-    if (stockValue === 0) {
+    if (stockValue !== null && stockValue !== undefined && stockValue <= 0) {
       toast({
         title: "Niet op voorraad",
         description: "Dit product is momenteel niet beschikbaar.",
         variant: "destructive",
       });
       setLoggingItemId(null);
+      setIsLogging(false);
       return;
     }
-    
+
     if (!canAfford(item.price_cents) && !isGuestMode) {
       toast({
         title: "Onvoldoende saldo",
@@ -199,6 +202,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         variant: "destructive",
       });
       setLoggingItemId(null);
+      setIsLogging(false);
       return;
     }
 
@@ -222,6 +226,8 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         description: `${item.name} voor ${formatCurrency(item.price_cents)} is afgetrokken van je saldo.`,
       });
 
+      // Refresh stock quantities
+      queryClient.invalidateQueries({ queryKey: ['items'] });
       onDrinkLogged();
     } catch (error) {
       toast({
@@ -231,6 +237,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
       });
     } finally {
       setLoggingItemId(null);
+      setIsLogging(false);
     }
   };
 
@@ -372,7 +379,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                           e.stopPropagation();
                           logDrink(item);
                         }}
-                        disabled={!affordable || isOutOfStock || loggingItemId === item.id}
+                        disabled={!affordable || isOutOfStock || isLogging}
                         size="sm"
                         className="w-full"
                       >
@@ -483,7 +490,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                           e.stopPropagation();
                           logDrink(item);
                         }}
-                        disabled={!affordable || isOutOfStock || loggingItemId === item.id}
+                        disabled={!affordable || isOutOfStock || isLogging}
                         size="sm"
                         className="w-full"
                       >
