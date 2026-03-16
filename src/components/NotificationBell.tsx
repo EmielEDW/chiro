@@ -78,6 +78,9 @@ export default function NotificationBell() {
           <SheetTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Meldingen
+            {unreadCount > 0 && (
+              <span className="text-sm font-normal text-primary">({unreadCount})</span>
+            )}
           </SheetTitle>
         </SheetHeader>
         <div className="mt-4 space-y-3 overflow-y-auto max-h-[calc(100vh-120px)]">

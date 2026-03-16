@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Bell, Users, User } from 'lucide-react';
+import { Send, Bell, Users, User, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function NotificationManager() {
@@ -43,6 +43,42 @@ export default function NotificationManager() {
         .limit(20);
       if (error) throw error;
       return data;
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Melding verwijderd');
+      queryClient.invalidateQueries({ queryKey: ['admin-sent-notifications'] });
+    },
+    onError: () => {
+      toast.error('Kon melding niet verwijderen');
+    },
+  });
+
+  const deleteAllByTitleMutation = useMutation({
+    mutationFn: async (notification: { title: string; created_at: string }) => {
+      // Delete all notifications with same title created at same time (broadcast group)
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('title', notification.title)
+        .eq('created_at', notification.created_at);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Alle meldingen in deze groep verwijderd');
+      queryClient.invalidateQueries({ queryKey: ['admin-sent-notifications'] });
+    },
+    onError: () => {
+      toast.error('Kon meldingen niet verwijderen');
     },
   });
 
@@ -186,9 +222,25 @@ export default function NotificationManager() {
                       {new Date(n.created_at).toLocaleDateString('nl-BE', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
-                  <Badge variant="outline" className="shrink-0 text-xs">
-                    {n.type === 'broadcast' ? 'Iedereen' : (n.profiles as any)?.name || 'Persoonlijk'}
-                  </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Badge variant="outline" className="text-xs">
+                      {n.type === 'broadcast' ? 'Iedereen' : (n.profiles as any)?.name || 'Persoonlijk'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => {
+                        if (n.type === 'broadcast') {
+                          deleteAllByTitleMutation.mutate({ title: n.title, created_at: n.created_at });
+                        } else {
+                          deleteMutation.mutate(n.id);
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
