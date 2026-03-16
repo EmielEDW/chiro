@@ -39,6 +39,22 @@ const BalanceAdjustmentDialog = ({ userId, userName, currentBalance }: BalanceAd
         .single();
 
       if (error) throw error;
+
+      // Send notification to user
+      const amount = Math.abs(deltaCents);
+      const euroStr = `€${(amount / 100).toFixed(2).replace('.', ',')}`;
+      const isPositive = deltaCents > 0;
+      await supabase.from('notifications').insert({
+        title: isPositive ? 'Saldo bijgeschreven' : 'Saldo afgeschreven',
+        message: isPositive
+          ? `Er is ${euroStr} bijgeschreven op je rekening. Reden: ${adjustmentReason}`
+          : `Er is ${euroStr} afgeschreven van je rekening. Reden: ${adjustmentReason}`,
+        type: 'personal',
+        action_type: 'announcement',
+        created_by: currentUser.user.id,
+        user_id: userId,
+      });
+
       return data;
     },
     onSuccess: () => {

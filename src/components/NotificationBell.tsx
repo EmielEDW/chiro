@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Bell } from 'lucide-react';
+import { Bell, Trophy } from 'lucide-react';
 
 interface Notification {
   id: string;
@@ -12,6 +12,11 @@ interface Notification {
   message: string;
   read: boolean;
   created_at: string;
+  action_type: string;
+}
+
+function isWinnerNotification(n: Notification) {
+  return n.title.toLowerCase().startsWith('winnaar van');
 }
 
 export default function NotificationBell() {
@@ -25,7 +30,7 @@ export default function NotificationBell() {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from('notifications')
-        .select('id, title, message, read, created_at')
+        .select('id, title, message, read, created_at, action_type')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(30);
@@ -87,23 +92,29 @@ export default function NotificationBell() {
           {notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Geen meldingen.</p>
           ) : (
-            notifications.map(n => (
-              <div
-                key={n.id}
-                className={`p-3 rounded-lg border ${!n.read ? 'bg-primary/5 border-primary/20' : 'border-border'}`}
-              >
-                <p className="font-medium text-sm">{n.title}</p>
-                <p className="text-xs text-muted-foreground mt-1">{n.message}</p>
-                <p className="text-[11px] text-muted-foreground mt-2">
-                  {new Date(n.created_at).toLocaleDateString('nl-BE', {
-                    day: 'numeric',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </p>
-              </div>
-            ))
+            notifications.map(n => {
+              const isWinner = isWinnerNotification(n);
+              return (
+                <div
+                  key={n.id}
+                  className={`p-3 rounded-lg border ${isWinner ? 'bg-primary/5 border-primary/30' : !n.read ? 'bg-primary/5 border-primary/20' : 'border-border'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    {isWinner && <Trophy className="h-4 w-4 text-primary shrink-0" />}
+                    <p className={`font-medium text-sm ${isWinner ? 'text-primary' : ''}`}>{n.title}</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{n.message}</p>
+                  <p className="text-[11px] text-muted-foreground mt-2">
+                    {new Date(n.created_at).toLocaleDateString('nl-BE', {
+                      day: 'numeric',
+                      month: 'short',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </p>
+                </div>
+              );
+            })
           )}
         </div>
       </SheetContent>

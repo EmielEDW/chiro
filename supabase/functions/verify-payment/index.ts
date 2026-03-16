@@ -77,9 +77,20 @@ serve(async (req) => {
         throw new Error("Failed to update top-up status");
       }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        amount: session.amount_total 
+      // Send notification to user
+      const euroStr = `€${(topUp.amount_cents / 100).toFixed(2).replace('.', ',')}`;
+      await supabaseService.from("notifications").insert({
+        title: "Saldo opgeladen",
+        message: `Je saldo is opgeladen met ${euroStr} via online betaling.`,
+        type: "personal",
+        action_type: "announcement",
+        created_by: topUp.user_id,
+        user_id: topUp.user_id,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        amount: session.amount_total
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
