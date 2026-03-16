@@ -27,7 +27,7 @@ function getPeriodStart(period: Period): string | null {
   return now.toISOString();
 }
 
-async function fetchLeaderboard(period: Period, userId: string | undefined): Promise<{ top5: LeaderboardEntry[]; currentUser: LeaderboardEntry | null }> {
+async function fetchLeaderboard(period: Period): Promise<LeaderboardEntry[]> {
   const periodStart = getPeriodStart(period);
 
   // Fetch all reversed consumption IDs
@@ -72,49 +72,45 @@ async function fetchLeaderboard(period: Period, userId: string | undefined): Pro
   }
 
   // Sort by total descending
-  const sorted = Array.from(totals.entries())
+  return Array.from(totals.entries())
     .map(([user_id, data]) => ({ user_id, ...data }))
     .sort((a, b) => b.total_cents - a.total_cents)
     .map((entry, i) => ({ ...entry, rank: i + 1 }));
-
-  const top5 = sorted.slice(0, 5);
-
-  // Find current user if not in top 5
-  let currentUser: LeaderboardEntry | null = null;
-  if (userId) {
-    const userEntry = sorted.find(e => e.user_id === userId);
-    if (userEntry && userEntry.rank > 5) {
-      currentUser = userEntry;
-    }
-  }
-
-  return { top5, currentUser };
 }
 
 function formatEuro(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace('.', ',')}`;
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="text-2xl">🥇</span>;
-  if (rank === 2) return <span className="text-2xl">🥈</span>;
-  if (rank === 3) return <span className="text-2xl">🥉</span>;
-  return <span className="text-lg font-bold text-muted-foreground w-8 text-center">#{rank}</span>;
+function TopThreeCard({ entry, isCurrentUser }: { entry: LeaderboardEntry; isCurrentUser: boolean }) {
+  const medals = ['🥇', '🥈', '🥉'];
+  return (
+    <div className={`flex items-center gap-4 p-5 rounded-2xl ${isCurrentUser ? 'bg-primary/10 ring-1 ring-primary/30' : 'glass'}`}>
+      <span className="text-3xl">{medals[entry.rank - 1]}</span>
+      <div className="flex-1 min-w-0">
+        <p className={`text-lg font-semibold truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+          {entry.name}
+          {isCurrentUser && <span className="text-sm text-muted-foreground ml-2">(jij)</span>}
+        </p>
+      </div>
+      <div className="text-right text-lg font-bold tabular-nums">
+        {formatEuro(entry.total_cents)}
+      </div>
+    </div>
+  );
 }
 
 function LeaderboardRow({ entry, isCurrentUser }: { entry: LeaderboardEntry; isCurrentUser: boolean }) {
   return (
-    <div className={`flex items-center gap-4 p-4 rounded-xl ${isCurrentUser ? 'bg-primary/10 ring-1 ring-primary/30' : 'glass'}`}>
-      <div className="flex items-center justify-center w-10">
-        <RankBadge rank={entry.rank} />
-      </div>
+    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${isCurrentUser ? 'bg-primary/10 ring-1 ring-primary/30' : ''}`}>
+      <span className="text-sm font-bold text-muted-foreground w-8 text-center">#{entry.rank}</span>
       <div className="flex-1 min-w-0">
-        <p className={`font-medium truncate ${isCurrentUser ? 'text-primary' : ''}`}>
+        <p className={`text-sm truncate ${isCurrentUser ? 'text-primary font-medium' : ''}`}>
           {entry.name}
           {isCurrentUser && <span className="text-xs text-muted-foreground ml-2">(jij)</span>}
         </p>
       </div>
-      <div className="text-right font-semibold tabular-nums">
+      <div className="text-right text-sm tabular-nums text-muted-foreground font-medium">
         {formatEuro(entry.total_cents)}
       </div>
     </div>
@@ -124,11 +120,18 @@ function LeaderboardRow({ entry, isCurrentUser }: { entry: LeaderboardEntry; isC
 function LeaderboardSkeleton() {
   return (
     <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4 rounded-xl glass">
-          <Skeleton className="h-8 w-10 rounded" />
-          <Skeleton className="h-5 flex-1 rounded" />
-          <Skeleton className="h-5 w-20 rounded" />
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex items-center gap-4 p-5 rounded-2xl glass">
+          <Skeleton className="h-9 w-9 rounded" />
+          <Skeleton className="h-6 flex-1 rounded" />
+          <Skeleton className="h-6 w-24 rounded" />
+        </div>
+      ))}
+      {[...Array(4)].map((_, i) => (
+        <div key={i + 3} className="flex items-center gap-3 px-4 py-3">
+          <Skeleton className="h-4 w-8 rounded" />
+          <Skeleton className="h-4 flex-1 rounded" />
+          <Skeleton className="h-4 w-16 rounded" />
         </div>
       ))}
     </div>
@@ -142,7 +145,7 @@ export default function Leaderboard() {
   const useLeaderboard = (period: Period) =>
     useQuery({
       queryKey: ['leaderboard', period],
-      queryFn: () => fetchLeaderboard(period, user?.id),
+      queryFn: () => fetchLeaderboard(period),
       enabled: !!user?.id,
       staleTime: 60_000,
     });
@@ -155,28 +158,34 @@ export default function Leaderboard() {
     if (query.isLoading) return <LeaderboardSkeleton />;
     if (query.error) return <p className="text-center text-destructive py-8">Fout bij laden.</p>;
 
-    const { top5, currentUser } = query.data!;
+    const entries = query.data!;
 
-    if (top5.length === 0) {
+    if (entries.length === 0) {
       return <p className="text-center text-muted-foreground py-8">Nog geen data voor deze periode.</p>;
     }
 
+    const top3 = entries.slice(0, 3);
+    const rest = entries.slice(3);
+
     return (
       <div className="space-y-3">
-        {top5.map(entry => (
-          <LeaderboardRow
+        {top3.map(entry => (
+          <TopThreeCard
             key={entry.user_id}
             entry={entry}
             isCurrentUser={entry.user_id === user?.id}
           />
         ))}
-        {currentUser && (
-          <>
-            <div className="flex justify-center py-1">
-              <span className="text-muted-foreground text-sm">· · ·</span>
-            </div>
-            <LeaderboardRow entry={currentUser} isCurrentUser />
-          </>
+        {rest.length > 0 && (
+          <div className="mt-2 space-y-1">
+            {rest.map(entry => (
+              <LeaderboardRow
+                key={entry.user_id}
+                entry={entry}
+                isCurrentUser={entry.user_id === user?.id}
+              />
+            ))}
+          </div>
         )}
       </div>
     );
