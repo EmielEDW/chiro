@@ -6,14 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
-  BarChart3, 
-  Users, 
-  Package, 
+  BarChart3,
+  Users,
+  Package,
   Euro,
   TrendingUp,
   AlertTriangle,
   Eye,
-  Settings
+  Settings,
+  Bell
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
@@ -24,6 +25,7 @@ import ProductManagement from '@/components/admin/ProductManagement';
 import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { AdminNotepad } from '@/components/admin/AdminNotepad';
+import NotificationManager from '@/components/admin/NotificationManager';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -101,7 +103,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 h-12 bg-background border-2 border-muted">
+          <TabsList className="grid w-full grid-cols-5 h-12 bg-background border-2 border-muted">
             <TabsTrigger 
               value="overview" 
               className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
@@ -123,12 +125,19 @@ const AdminDashboard = () => {
               <Package className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Voorraad</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="analytics" 
+            <TabsTrigger
+              value="analytics"
               className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
               <Settings className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Analytics</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="notifications"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
+            >
+              <Bell className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Meldingen</span>
             </TabsTrigger>
           </TabsList>
 
@@ -149,6 +158,10 @@ const AdminDashboard = () => {
           
           <TabsContent value="analytics">
             <SalesDetailsDashboard />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <NotificationManager />
           </TabsContent>
         </Tabs>
       </div>

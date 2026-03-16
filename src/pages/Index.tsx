@@ -8,6 +8,7 @@ import MobileCategoryFilter from '@/components/MobileCategoryFilter';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, History, Settings, Trophy } from 'lucide-react';
+import NotificationBell from '@/components/NotificationBell';
 import { useNavigate } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useState } from 'react';
@@ -72,6 +73,8 @@ const Index = () => {
                 <p className="text-xs text-muted-foreground">{profile?.chiro_role || 'Lid'}</p>
               </div>
               
+              <NotificationBell />
+
               {profile?.role === 'admin' && (
                 <Button
                   variant="ghost"
@@ -82,7 +85,7 @@ const Index = () => {
                   <Settings className="h-4 w-4" />
                 </Button>
               )}
-              
+
               <Button
                 variant="ghost"
                 size="sm"

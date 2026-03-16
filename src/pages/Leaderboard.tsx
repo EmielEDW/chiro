@@ -5,7 +5,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Trophy, Medal } from 'lucide-react';
+import { ArrowLeft, Trophy } from 'lucide-react';
+import { useState } from 'react';
 
 interface LeaderboardEntry {
   user_id: string;
@@ -82,6 +83,42 @@ function formatEuro(cents: number): string {
   return `€${(cents / 100).toFixed(2).replace('.', ',')}`;
 }
 
+function getPeriodProgress(period: Period): { elapsed: number; total: number; label: string } | null {
+  if (period === 'all') return null;
+  const now = new Date();
+  if (period === 'month') {
+    const day = now.getDate();
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    return { elapsed: day, total: daysInMonth, label: `Dag ${day} van ${daysInMonth}` };
+  }
+  // year
+  const start = new Date(now.getFullYear(), 0, 1);
+  const dayOfYear = Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  const isLeap = (now.getFullYear() % 4 === 0 && now.getFullYear() % 100 !== 0) || now.getFullYear() % 400 === 0;
+  const totalDays = isLeap ? 366 : 365;
+  return { elapsed: dayOfYear, total: totalDays, label: `Dag ${dayOfYear} van ${totalDays}` };
+}
+
+function PeriodProgressBar({ period }: { period: Period }) {
+  const progress = getPeriodProgress(period);
+  if (!progress) return null;
+  const pct = Math.round((progress.elapsed / progress.total) * 100);
+  return (
+    <div className="mb-5">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs text-muted-foreground">{progress.label}</span>
+        <span className="text-xs text-muted-foreground">{pct}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full rounded-full bg-primary transition-all duration-500"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function TopThreeCard({ entry, isCurrentUser }: { entry: LeaderboardEntry; isCurrentUser: boolean }) {
   const medals = ['🥇', '🥈', '🥉'];
   return (
@@ -141,6 +178,7 @@ function LeaderboardSkeleton() {
 export default function Leaderboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [activePeriod, setActivePeriod] = useState<Period>('month');
 
   const useLeaderboard = (period: Period) =>
     useQuery({
@@ -211,12 +249,14 @@ export default function Leaderboard() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-lg">
-        <Tabs defaultValue="month">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+        <Tabs defaultValue="month" onValueChange={(v) => setActivePeriod(v as Period)}>
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="month">Maand</TabsTrigger>
             <TabsTrigger value="year">Jaar</TabsTrigger>
             <TabsTrigger value="all">Altijd</TabsTrigger>
           </TabsList>
+
+          <PeriodProgressBar period={activePeriod} />
 
           <TabsContent value="month">{renderTab(month)}</TabsContent>
           <TabsContent value="year">{renderTab(year)}</TabsContent>
