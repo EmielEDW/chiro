@@ -207,8 +207,20 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
     }
 
     try {
-      const clientId = `${Date.now()}-${Math.random()}`;
-      const userId = isGuestMode ? guestUserId : (await supabase.auth.getUser()).data.user?.id;
+      const clientId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const userId = isGuestMode ? guestUserId : user?.id;
+
+      if (!userId) {
+        toast({
+          title: "Fout",
+          description: "Je bent niet ingelogd. Log opnieuw in.",
+          variant: "destructive",
+        });
+        setLoggingItemId(null);
+        setIsLogging(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('consumptions')
         .insert({
@@ -229,10 +241,21 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
       // Refresh stock quantities
       queryClient.invalidateQueries({ queryKey: ['items'] });
       onDrinkLogged();
-    } catch (error) {
+    } catch (error: any) {
+      const message = error?.message || '';
+      let description = "Er ging iets mis bij het loggen van je drankje.";
+
+      if (message.includes('Onvoldoende saldo')) {
+        description = "Je hebt niet genoeg saldo. Laad eerst je saldo op.";
+      } else if (message.includes('Onvoldoende voorraad')) {
+        description = "Dit product is niet meer op voorraad.";
+      } else if (message.includes('consumptions_client_id_unique') || message.includes('duplicate key')) {
+        description = "Dit drankje was al geregistreerd. Probeer opnieuw.";
+      }
+
       toast({
         title: "Fout",
-        description: "Er ging iets mis bij het loggen van je drankje.",
+        description,
         variant: "destructive",
       });
     } finally {
