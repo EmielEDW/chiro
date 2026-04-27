@@ -94,6 +94,33 @@ export type Database = {
           },
         ]
       }
+      categories: {
+        Row: {
+          slug: string
+          name: string
+          color: string
+          sort_order: number
+          is_protected: boolean
+          created_at: string
+        }
+        Insert: {
+          slug: string
+          name: string
+          color: string
+          sort_order?: number
+          is_protected?: boolean
+          created_at?: string
+        }
+        Update: {
+          slug?: string
+          name?: string
+          color?: string
+          sort_order?: number
+          is_protected?: boolean
+          created_at?: string
+        }
+        Relationships: []
+      }
       consumptions: {
         Row: {
           client_id: string | null
@@ -185,7 +212,7 @@ export type Database = {
       items: {
         Row: {
           active: boolean
-          category: Database["public"]["Enums"]["drink_category"] | null
+          category: string | null
           created_at: string
           description: string | null
           event_id: string | null
@@ -202,7 +229,7 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          category?: Database["public"]["Enums"]["drink_category"] | null
+          category?: string | null
           created_at?: string
           description?: string | null
           event_id?: string | null
@@ -219,7 +246,7 @@ export type Database = {
         }
         Update: {
           active?: boolean
-          category?: Database["public"]["Enums"]["drink_category"] | null
+          category?: string | null
           created_at?: string
           description?: string | null
           event_id?: string | null
@@ -242,47 +269,12 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      mixed_drink_components: {
-        Row: {
-          component_item_id: string
-          created_at: string
-          id: string
-          mixed_drink_id: string
-          quantity: number
-          updated_at: string
-        }
-        Insert: {
-          component_item_id: string
-          created_at?: string
-          id?: string
-          mixed_drink_id: string
-          quantity?: number
-          updated_at?: string
-        }
-        Update: {
-          component_item_id?: string
-          created_at?: string
-          id?: string
-          mixed_drink_id?: string
-          quantity?: number
-          updated_at?: string
-        }
-        Relationships: [
           {
-            foreignKeyName: "mixed_drink_components_component_item_id_fkey"
-            columns: ["component_item_id"]
+            foreignKeyName: "items_category_fkey"
+            columns: ["category"]
             isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mixed_drink_components_mixed_drink_id_fkey"
-            columns: ["mixed_drink_id"]
-            isOneToOne: false
-            referencedRelation: "items"
-            referencedColumns: ["id"]
+            referencedRelation: "categories"
+            referencedColumns: ["slug"]
           },
         ]
       }
@@ -748,17 +740,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      calculate_mixed_drink_prices: {
-        Args: { mixed_drink_item_id: string }
-        Returns: {
-          calculated_purchase_price: number
-          calculated_sell_price: number
-        }[]
-      }
-      calculate_mixed_drink_stock: {
-        Args: { mixed_drink_item_id: string }
-        Returns: number
-      }
       calculate_user_balance: { Args: { user_uuid: string }; Returns: number }
       create_temp_guest_account: {
         Args: { _guest_name: string }
@@ -780,14 +761,6 @@ export type Database = {
     }
     Enums: {
       consumption_source: "tap" | "qr" | "admin"
-      drink_category:
-        | "chips"
-        | "frisdranken"
-        | "bieren"
-        | "mixed_drinks"
-        | "andere"
-        | "sterke_dranken"
-        | "cocktails"
       topup_status: "pending" | "paid" | "failed" | "cancelled"
       user_role: "user" | "treasurer" | "admin"
     }
@@ -918,15 +891,6 @@ export const Constants = {
   public: {
     Enums: {
       consumption_source: ["tap", "qr", "admin"],
-      drink_category: [
-        "chips",
-        "frisdranken",
-        "bieren",
-        "mixed_drinks",
-        "andere",
-        "sterke_dranken",
-        "cocktails",
-      ],
       topup_status: ["pending", "paid", "failed", "cancelled"],
       user_role: ["user", "treasurer", "admin"],
     },

@@ -7,6 +7,8 @@ import { Plus, Heart, HeartOff, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
+import { useCategories } from '@/hooks/useCategories';
+import { categoryBadgeClass } from '@/lib/categoryColors';
 interface Item {
   id: string;
   name: string;
@@ -32,6 +34,7 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
   const queryClient = useQueryClient();
   const [loggingItemId, setLoggingItemId] = useState<string | null>(null);
   const [isLogging, setIsLogging] = useState(false);
+  const { bySlug } = useCategories();
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['items'],
@@ -42,33 +45,13 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         .eq('active', true)
         .eq('is_default', true)
         .order('price_cents');
-      
+
       if (error) throw error;
 
-      // Voor mixed drinks, bereken de beschikbare stock op basis van componenten
-      const itemsWithCalculatedStock = await Promise.all(
-        (itemsData || []).map(async (item) => {
-          if (item.category === 'mixed_drinks') {
-            try {
-              const { data: stockResult, error: stockError } = await supabase
-                .rpc('calculate_mixed_drink_stock', { mixed_drink_item_id: item.id });
-              
-              if (stockError) {
-                console.warn('Error calculating mixed drink stock:', stockError);
-                return { ...item, calculated_stock: 0 };
-              }
-              
-              return { ...item, calculated_stock: stockResult || 0 };
-            } catch (error) {
-              console.warn('Error calculating stock for mixed drink:', error);
-              return { ...item, calculated_stock: 0 };
-            }
-          }
-          return { ...item, calculated_stock: item.stock_quantity || 0 };
-        })
-      );
-
-      return itemsWithCalculatedStock as Item[];
+      return (itemsData ?? []).map((item) => ({
+        ...item,
+        calculated_stock: item.stock_quantity ?? 0,
+      })) as Item[];
     },
   });
 
@@ -120,62 +103,14 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
     return balance >= price;
   };
 
-  const getCategoryColor = (category?: string) => {
-    switch (category) {
-      case 'chips':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'frisdranken':
-        return 'bg-blue-100 text-blue-800';
-      case 'bieren':
-        return 'bg-amber-100 text-amber-800';
-      case 'sterke_dranken':
-        return 'bg-red-100 text-red-800';
-      case 'mixed_drinks':
-        return 'bg-purple-100 text-purple-800';
-      case 'andere':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const getCategoryName = (slug?: string) =>
+    (slug && bySlug.get(slug)?.name) || 'Andere';
 
-  const getCategoryName = (category?: string) => {
-    switch (category) {
-      case 'chips':
-        return 'Chips';
-      case 'frisdranken':
-        return 'Frisdranken';
-      case 'bieren':
-        return 'Bieren';
-      case 'sterke_dranken':
-        return 'Sterke dranken';
-      case 'mixed_drinks':
-        return 'Mixed Drinks';
-      case 'andere':
-        return 'Andere';
-      default:
-        return 'Andere';
-    }
-  };
+  const getCategoryColorClass = (slug?: string) =>
+    categoryBadgeClass(slug ? bySlug.get(slug)?.color : null);
 
-  const getCategoryOrder = (category?: string) => {
-    switch (category) {
-      case 'frisdranken':
-        return 1;
-      case 'bieren':
-        return 2;
-      case 'sterke_dranken':
-        return 3;
-      case 'mixed_drinks':
-        return 4;
-      case 'chips':
-        return 5;
-      case 'andere':
-        return 6;
-      default:
-        return 7;
-    }
-  };
+  const getCategoryOrder = (slug?: string) =>
+    (slug && bySlug.get(slug)?.sort_order) ?? 9999;
 
   const logDrink = async (item: Item) => {
     if (isLogging) return; // prevent any click while a log is in progress
@@ -388,10 +323,6 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                             <Badge variant="secondary" className="text-xs">
                               Weinig voorraad: {stockValue}
                             </Badge>
-                          ) : item.category === 'mixed_drinks' ? (
-                            <Badge variant="default" className="text-xs">
-                              Beschikbaar
-                            </Badge>
                           ) : null}
                         </div>
                       </div>
@@ -423,9 +354,9 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
         <div key={category} className="space-y-4" data-category={category}>
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold">{getCategoryName(category)}</h3>
-            <Badge 
-              variant="secondary" 
-              className={`text-xs ${getCategoryColor(category)}`}
+            <Badge
+              variant="secondary"
+              className={`text-xs ${getCategoryColorClass(category)}`}
             >
               {groupedItems[category].length} items
             </Badge>
@@ -498,10 +429,6 @@ export const DrinkGrid = ({ balance, onDrinkLogged, isGuestMode = false, guestUs
                           ) : isLowStock ? (
                             <Badge variant="secondary" className="text-xs">
                               Weinig voorraad: {stockValue}
-                            </Badge>
-                          ) : item.category === 'mixed_drinks' ? (
-                            <Badge variant="default" className="text-xs">
-                              Beschikbaar
                             </Badge>
                           ) : null}
                         </div>

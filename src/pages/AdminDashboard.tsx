@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
+import {
   BarChart3,
   Users,
   Package,
@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Eye,
   Settings,
-  Bell
+  Bell,
+  Tag
 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { useProfile } from '@/hooks/useProfile';
@@ -26,6 +27,7 @@ import SalesDetailsDashboard from '@/components/admin/SalesDetailsDashboard';
 import InventoryValueDashboard from '@/components/admin/InventoryValueDashboard';
 import { AdminNotepad } from '@/components/admin/AdminNotepad';
 import NotificationManager from '@/components/admin/NotificationManager';
+import CategoryManagement from '@/components/admin/CategoryManagement';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
@@ -103,7 +105,7 @@ const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5 h-12 bg-background border-2 border-muted">
+          <TabsList className="grid w-full grid-cols-6 h-12 bg-background border-2 border-muted">
             <TabsTrigger 
               value="overview" 
               className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
@@ -118,12 +120,19 @@ const AdminDashboard = () => {
               <Users className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Gebruikers</span>
             </TabsTrigger>
-            <TabsTrigger 
-              value="stock" 
+            <TabsTrigger
+              value="stock"
               className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
             >
               <Package className="h-4 w-4 shrink-0" />
               <span className="hidden sm:inline">Voorraad</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="categories"
+              className="flex items-center justify-center gap-1 sm:gap-2 h-10 text-xs sm:text-sm font-medium transition-all data-[state=active]:bg-destructive data-[state=active]:text-destructive-foreground data-[state=active]:border-destructive data-[state=active]:shadow-sm hover:bg-muted/50 px-1 sm:px-3"
+            >
+              <Tag className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">Categorieën</span>
             </TabsTrigger>
             <TabsTrigger
               value="analytics"
@@ -155,7 +164,11 @@ const AdminDashboard = () => {
             <StockAudits />
             <AdminNotepad />
           </TabsContent>
-          
+
+          <TabsContent value="categories">
+            <CategoryManagement />
+          </TabsContent>
+
           <TabsContent value="analytics">
             <SalesDetailsDashboard />
           </TabsContent>

@@ -2,15 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-const categories = [
-  { key: 'frisdranken', name: 'Frisdranken', color: 'bg-blue-100 text-blue-800' },
-  { key: 'bieren', name: 'Bieren', color: 'bg-amber-100 text-amber-800' },
-  { key: 'sterke_dranken', name: 'Sterke dranken', color: 'bg-red-100 text-red-800' },
-  { key: 'mixed_drinks', name: 'Mixed Drinks', color: 'bg-purple-100 text-purple-800' },
-  { key: 'chips', name: 'Chips', color: 'bg-yellow-100 text-yellow-800' },
-  { key: 'andere', name: 'Andere', color: 'bg-gray-100 text-gray-800' }
-];
+import { useCategories } from '@/hooks/useCategories';
+import { categoryBadgeClass } from '@/lib/categoryColors';
 
 interface MobileCategoryFilterProps {
   onCategorySelect: (category: string) => void;
@@ -23,6 +16,7 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
 }) => {
   const [isSticky, setIsSticky] = useState(false);
   const isMobile = useIsMobile();
+  const { categories } = useCategories();
 
   useEffect(() => {
     if (!isMobile) return;
@@ -115,14 +109,14 @@ const MobileCategoryFilter: React.FC<MobileCategoryFilterProps> = ({
           
           {categories.map((category) => (
             <Badge
-              key={category.key}
-              variant={selectedCategory === category.key ? "default" : "outline"}
+              key={category.slug}
+              variant={selectedCategory === category.slug ? "default" : "outline"}
               className={`
                 cursor-pointer whitespace-nowrap flex-shrink-0 text-xs h-8 px-3 min-w-fit
                 transition-colors duration-200 hover:opacity-80
-                ${selectedCategory === category.key ? '' : category.color}
+                ${selectedCategory === category.slug ? '' : categoryBadgeClass(category.color)}
               `}
-              onClick={() => scrollToCategory(category.key)}
+              onClick={() => scrollToCategory(category.slug)}
             >
               {category.name}
             </Badge>
