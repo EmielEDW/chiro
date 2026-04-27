@@ -441,14 +441,26 @@ const RestockDetailsView = ({ sessionId }: { sessionId: string }) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('restock_items')
-        .select(`
-          *,
-          items:item_id (name)
-        `)
+        .select('*')
         .eq('restock_session_id', sessionId);
 
       if (error) throw error;
-      return data;
+
+      const itemIds = Array.from(new Set((data ?? []).map((d) => d.item_id)));
+      if (itemIds.length === 0) return [];
+
+      const { data: itemsData, error: itemsError } = await supabase
+        .from('items')
+        .select('id, name')
+        .in('id', itemIds);
+
+      if (itemsError) throw itemsError;
+
+      const nameById = new Map((itemsData ?? []).map((i) => [i.id, i.name]));
+      return (data ?? []).map((d) => ({
+        ...d,
+        items: { name: nameById.get(d.item_id) ?? 'Onbekend' },
+      }));
     },
   });
 
