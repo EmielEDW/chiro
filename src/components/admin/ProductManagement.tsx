@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Edit, Trash2 } from 'lucide-react';
+import { Plus, Edit, Archive, RotateCcw } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useCategories } from '@/hooks/useCategories';
 import { categoryBadgeClass } from '@/lib/categoryColors';
@@ -26,6 +26,7 @@ interface Item {
   image_url?: string;
   stock_quantity?: number;
   notify_on_low_stock?: boolean;
+  active: boolean;
   created_at: string;
 }
 
@@ -158,18 +159,46 @@ const ProductManagement = () => {
     },
   });
 
-  const deleteItem = useMutation({
+  const archiveItem = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('items')
-        .delete()
+        .update({ active: false })
         .eq('id', id);
 
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-products'] });
-      toast({ title: 'Product verwijderd', description: 'Het product is permanent verwijderd.' });
+      toast({
+        title: 'Product gearchiveerd',
+        description: 'Het product is verborgen voor leden. History blijft behouden.',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Fout',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const reactivateItem = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('items')
+        .update({ active: true })
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-products'] });
+      toast({
+        title: 'Product heractiveerd',
+        description: 'Het product is weer zichtbaar voor leden.',
+      });
     },
     onError: (error: any) => {
       toast({
@@ -426,7 +455,7 @@ const ProductManagement = () => {
                   return orderA - orderB;
                 })
                 .map((item) => (
-                <TableRow key={item.id}>
+                <TableRow key={item.id} className={item.active ? '' : 'opacity-50 bg-muted/30'}>
                   <TableCell>
                     <div className="flex items-center gap-3">
                       {item.image_url && (
@@ -439,7 +468,16 @@ const ProductManagement = () => {
                       <span className="font-medium">{item.name}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{getCategoryBadge(item.category)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getCategoryBadge(item.category)}
+                      {!item.active && (
+                        <Badge variant="outline" className="text-xs">
+                          Gearchiveerd
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>{item.stock_quantity || 0}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -450,13 +488,29 @@ const ProductManagement = () => {
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => deleteItem.mutate(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      {item.active ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (window.confirm(`"${item.name}" archiveren? Het verdwijnt uit het menu maar history blijft behouden.`)) {
+                              archiveItem.mutate(item.id);
+                            }
+                          }}
+                          title="Archiveren"
+                        >
+                          <Archive className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => reactivateItem.mutate(item.id)}
+                          title="Heractiveren"
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
